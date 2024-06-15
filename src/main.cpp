@@ -1,0 +1,389 @@
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include <glad/glad.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
+#define GL_PIXEL_SHADER GL_FRAGMENT_SHADER
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+
+static void error_callback(int error, const char* description) {
+    std::cerr << "Error: " << description << std::endl;
+}
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+
+    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
+        std::cout << "Enter was Pressed :)" << std::endl; 
+    }
+}
+
+//Hold our vertex information
+// * the location for each of our verticies
+// * the ordering for how we should draw (indexData)
+
+class Mesh {
+private:
+    std::vector<float> vertexData;
+    std::vector<uint32_t> indexData;
+public:
+    Mesh() = default;
+    Mesh(const std::vector<std::vector<float>>& vertexData, const std::vector<uint32_t>& indexData) {
+        for(auto row : vertexData) {
+            for(auto e : row) {
+                this->vertexData.push_back(e);        
+            }
+        }
+
+        for(auto e : indexData) this->indexData.push_back(e);
+    }
+
+    size_t getVertexDataSize() const {
+        return vertexData.size() * sizeof(float);
+    }
+
+    size_t getIndexDataSize() const {
+        return indexData.size() * sizeof(uint32_t);
+    }
+
+    std::vector<float> getVertexData() const {
+        return vertexData;
+    }
+    std::vector<uint32_t> getIndexData() const {
+        return indexData;
+    }
+
+    size_t getNumIndicies() {
+        return indexData.size();
+    }
+};
+
+GLuint registerShader(GLuint shaderType, std::string fileName) {
+    GLuint shaderId = glCreateShader(shaderType);
+    
+    std::ifstream infile(fileName);
+    std::string line, shaderCode;
+    while (std::getline(infile, line)) {
+        shaderCode += line + "\n";
+    }
+    
+    const char* shaderSourceCstr = shaderCode.c_str();
+    glShaderSource(shaderId, 1, &shaderSourceCstr, NULL);
+    glCompileShader(shaderId);
+
+    return shaderId;
+}
+
+GLuint registerShaderProgram() {
+    return glCreateProgram();
+}
+
+void attachShader(GLuint programId, GLuint shaderId) {
+    glAttachShader(programId, shaderId);
+}
+
+void linkShader(GLuint programId) {
+    glLinkProgram(programId);
+
+    GLint success;
+    glGetProgramiv(programId, GL_LINK_STATUS, &success);
+    if(!success) {
+        GLchar infoLog[512];
+        std::cout << "shader program failed to link" << std::endl;
+        glGetProgramInfoLog(programId, 512, NULL, infoLog);
+        std::cout << infoLog << std::endl;
+    }
+}
+
+void selectShaderProgram(GLuint programId) {
+    glUseProgram(programId);
+}
+
+GLuint registerMesh(const Mesh& mesh) {
+    if(mesh.getVertexDataSize() == 0) {
+        throw new std::runtime_error("vertex size must be greater then zero");
+    }
+
+    if(mesh.getIndexDataSize() == 0) {
+        throw new std::runtime_error("index size must be greater than zero");
+    }
+
+    GLuint vao, vbo, ebo;
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    glGenBuffers(1, &vbo); //Get me a new buffer id (like a pointer) from GPU and store it in vbo variable
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, mesh.getVertexDataSize(), &(mesh.getVertexData())[0], GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+        3,                  // size //HARD CODED - Should fix later
+        GL_FLOAT,           // type //HARD CODED - Should fix later
+        GL_FALSE,           // normalized?
+        5 * sizeof(float),  // stride
+        (void*)0            // array buffer offset
+    );
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1,
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        5 * sizeof(float),
+        (void*)(3 * sizeof(float))
+    );
+
+
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.getIndexDataSize(), &(mesh.getIndexData())[0], GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+    glDisableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    return vao;
+}
+
+void drawMesh(GLuint drawableId, GLuint totalIndicies) {
+    if(drawableId == 0) {
+        throw new std::runtime_error("Drawable id is invalid");
+    }
+
+    glBindVertexArray(drawableId);
+    glDrawElements(GL_TRIANGLES, totalIndicies, GL_UNSIGNED_INT, 0);
+}
+
+int main() {
+    std::cout << "Hello OpenGL" << std::endl;
+
+    glfwSetErrorCallback(error_callback);
+
+    //Init GLFW and ensure its not cooked
+    if (!glfwInit()) throw new std::runtime_error("GLFW Error");
+
+    //OpenGL 4.1 is latest suppported for Mac
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+
+    std::cout << "Loaded OpenGL" << std::endl;
+
+    //Create window
+    const unsigned int SCR_WIDTH = 800;
+    const unsigned int SCR_HEIGHT = 600;
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Rubics Cube", NULL, NULL);
+
+    //Make sure window is not cooked
+    if(!window) throw new std::runtime_error("Window Error");
+
+    glfwSetKeyCallback(window, key_callback);
+    
+    glfwMakeContextCurrent(window);
+    gladLoadGL();
+    glfwSwapInterval(1);
+
+    // Do Shader Stuff
+    GLuint vertexShader = registerShader(GL_VERTEX_SHADER, "../src/shader/vertex_shader.glsl");
+    GLuint pixelShader = registerShader(GL_PIXEL_SHADER, "../src/shader/pixel_shader.glsl");
+    GLuint shaderProgram = registerShaderProgram();
+    attachShader(shaderProgram, vertexShader);
+    attachShader(shaderProgram, pixelShader);
+    linkShader(shaderProgram);
+
+    Mesh raw_mesh = {
+        {
+        // // positions          // texture coords
+        // {0.5f,  0.5f, 0.0f,   1.0f, 1.0f}, // top right
+        // {0.5f, -0.5f, 0.0f,   1.0f, 0.0f}, // bottom right
+        // {-0.5f, -0.5f, 0.0f,   0.0f, 0.0f}, // bottom left
+        // {-0.5f,  0.5f, 0.0f,   0.0f, 1.0f}},  // top left 
+
+        //Cube 1
+        {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
+        {0.5f, -0.5f, -0.5f,  1.0f, 0.0f},
+        {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
+        {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
+
+        {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
+        {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},
+        {0.5f,  0.5f,  0.5f,  1.0f, 1.0},
+        {-0.5f,  0.5f,  0.5f,  0.0f, 1.0f},
+        {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+
+        {-0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        {-0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        {-0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+
+        {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+
+        {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        {0.5f, -0.5f, -0.5f,  1.0f, 1.0f},
+        {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
+        {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
+        {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+
+        {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
+        {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        {-0.5f,  0.5f,  0.5f,  0.0f, 0.0f},
+        {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
+
+        //Cube 2
+        {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 36
+        {1.5f, -0.5f, -0.5f,  1.0f, 0.0f},  // 37
+        {1.5f,  0.5f, -0.5f,  1.0f, 1.0f},  // 38
+        {1.5f,  0.5f, -0.5f,  1.0f, 1.0f},  // 39
+        {0.5f,  0.5f, -0.5f,  0.0f, 1.0f},  // 40
+        {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 41
+
+        {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},  // 42
+        {1.5f, -0.5f,  0.5f,  1.0f, 0.0f},  // 43
+        {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 44
+        {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 45
+        {0.5f,  0.5f,  0.5f,  0.0f, 1.0f},  // 46
+        {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},  // 47
+
+        {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 48
+        {1.5f,  0.5f, -0.5f,  1.0f, 0.0f},  // 49
+        {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 50
+        {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 51
+        {1.5f, -0.5f,  0.5f,  0.0f, 1.0f},  // 52
+        {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 53
+
+        {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 54
+        {1.5f, -0.5f,  0.5f,  1.0f, 0.0f},  // 55
+        {0.5f, -0.5f,  0.5f,  1.0f, 1.0f},  // 56
+        {0.5f, -0.5f,  0.5f,  1.0f, 1.0f},  // 57
+        {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},  // 58
+        {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 59
+
+        {1.5f,  0.5f, -0.5f,  0.0f, 0.0f},  // 60
+        {1.5f,  0.5f,  0.5f,  1.0f, 0.0f},  // 61
+        {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 62
+        {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 63
+        {0.5f,  0.5f, -0.5f,  0.0f, 1.0f},  // 64
+        {1.5f,  0.5f, -0.5f,  0.0f, 0.0f},  // 65
+    
+        },
+        
+        //Index
+        //Cube 1
+        {0, 1, 2, 3, 4, 5,     // Back face
+        6, 7, 8, 9, 10, 11,   // Front face
+        12, 13, 14, 15, 16, 17, // Left face
+        18, 19, 20, 21, 22, 23, // Right face
+        24, 25, 26, 27, 28, 29, // Bottom face
+        30, 31, 32, 33, 34, 35, // Top
+
+        //Cube 2
+        36, 37, 38, 39, 40, 41,
+        42, 43, 44, 45, 46, 47, 
+        48, 49, 50, 51, 52, 53,
+        54, 55, 56, 57, 58, 59, 
+        60, 61, 62, 63, 64, 65
+        //66, 67, 68, 69, 70, 71
+
+        // 72, 73, 74, 75, 76, 77
+        // 78, 79, 80, 81, 82, 83 
+        // 84, 85, 86, 87, 88, 89, 
+        // 90, 91, 92, 93, 94, 95,
+        // 96, 97, 98, 99, 100, 101
+        }
+    };
+    
+    GLuint mesh = registerMesh(raw_mesh);
+
+    //TEXTURE
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("../resource/yellow_cube.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    GLuint textureLocation = glGetUniformLocation(shaderProgram, "ourTexture");
+    glUniform1i(textureLocation, 0); // Bind the texture to texture unit 0
+
+    //TRANSFORM
+    // unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform"); //new
+
+    //Main Event Loop
+    while(!glfwWindowShouldClose(window)) {
+        glClearColor(0.2f, 0.3f, 0.6f, 1.0f);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        selectShaderProgram(shaderProgram);
+        // glm::mat4 trans = glm::mat4(1.0f);
+        // trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
+        // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        // glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+        glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        glm::mat4 view          = glm::mat4(1.0f);
+        glm::mat4 projection    = glm::mat4(1.0f);
+        view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));  
+        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        // retrieve the matrix uniform locations
+        unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+        unsigned int viewLoc  = glGetUniformLocation(shaderProgram, "view");
+        unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+
+        // pass them to the shaders (3 different ways)
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &projection[0][0]);
+
+
+        drawMesh(mesh, raw_mesh.getNumIndicies());
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    std::cout << "Window Closed" << std::endl;
+}
