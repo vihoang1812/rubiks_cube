@@ -16,6 +16,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+glm::vec3 camera = glm::vec3(0.0f, 0.0f, -3.0f);
+float camRot = 0;
+float cubeRotAng = 0.0f;
 
 static void error_callback(int error, const char* description) {
     std::cerr << "Error: " << description << std::endl;
@@ -27,6 +30,37 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
         std::cout << "Enter was Pressed :)" << std::endl; 
+        camera += glm::vec3(0.1f, 0.0f, 0.0f);
+    }
+
+    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) {
+        std::cout << "Shift was Pressed :)" << std::endl; 
+        camRot += 0.1;
+    }
+
+    if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) {
+        std::cout << "Shift was Pressed :)" << std::endl; 
+        camRot -= 0.1;
+    }
+
+    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+        std::cout << "UP was Pressed :)" << std::endl; 
+        camera += glm::vec3(0.0f, 0.0f, 0.2f);
+    }
+
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+        std::cout << "DOWN was Pressed :)" << std::endl; 
+        camera += glm::vec3(0.0f, 0.0f, -0.2f);
+    }
+
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+        std::cout << "Rotate left" << std::endl;
+        cubeRotAng -= glm::radians(30.0f); 
+    }
+
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+        std::cout << "Rotate right" << std::endl;
+        cubeRotAng += glm::radians(30.0f); 
     }
 }
 
@@ -162,6 +196,32 @@ GLuint registerMesh(const Mesh& mesh) {
     return vao;
 }
 
+void foo(glm::vec3 objPos, glm::vec3 camPos, GLuint shaderProgram) {
+    // glm::mat4 trans = glm::mat4(1.0f);
+    // trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
+    // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+    // glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+    glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+    glm::mat4 view          = glm::mat4(1.0f);
+    glm::mat4 projection    = glm::mat4(1.0f);
+    
+    projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 100.0f);
+    view  = glm::translate(view, camPos);
+    view = glm::rotate(view, camRot, glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::translate(view, objPos);
+    model = glm::rotate(model, cubeRotAng, glm::vec3(0.0f, 1.0f, 0.0f));  
+    
+    // retrieve the matrix uniform locations
+    unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+    unsigned int viewLoc  = glGetUniformLocation(shaderProgram, "view");
+    unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+
+    // pass them to the shaders (3 different ways)
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &projection[0][0]);
+}
+
 void drawMesh(GLuint drawableId, GLuint totalIndicies) {
     if(drawableId == 0) {
         throw new std::runtime_error("Drawable id is invalid");
@@ -259,40 +319,40 @@ int main() {
         {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
 
         //Cube 2
-        {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 36
-        {1.5f, -0.5f, -0.5f,  1.0f, 0.0f},  // 37
-        {1.5f,  0.5f, -0.5f,  1.0f, 1.0f},  // 38
-        {1.5f,  0.5f, -0.5f,  1.0f, 1.0f},  // 39
-        {0.5f,  0.5f, -0.5f,  0.0f, 1.0f},  // 40
-        {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 41
+        // {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 36
+        // {1.5f, -0.5f, -0.5f,  1.0f, 0.0f},  // 37
+        // {1.5f,  0.5f, -0.5f,  1.0f, 1.0f},  // 38
+        // {1.5f,  0.5f, -0.5f,  1.0f, 1.0f},  // 39
+        // {0.5f,  0.5f, -0.5f,  0.0f, 1.0f},  // 40
+        // {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 41
 
-        {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},  // 42
-        {1.5f, -0.5f,  0.5f,  1.0f, 0.0f},  // 43
-        {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 44
-        {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 45
-        {0.5f,  0.5f,  0.5f,  0.0f, 1.0f},  // 46
-        {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},  // 47
+        // {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},  // 42
+        // {1.5f, -0.5f,  0.5f,  1.0f, 0.0f},  // 43
+        // {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 44
+        // {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 45
+        // {0.5f,  0.5f,  0.5f,  0.0f, 1.0f},  // 46
+        // {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},  // 47
 
-        {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 48
-        {1.5f,  0.5f, -0.5f,  1.0f, 0.0f},  // 49
-        {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 50
-        {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 51
-        {1.5f, -0.5f,  0.5f,  0.0f, 1.0f},  // 52
-        {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 53
+        // {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 48
+        // {1.5f,  0.5f, -0.5f,  1.0f, 0.0f},  // 49
+        // {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 50
+        // {1.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 51
+        // {1.5f, -0.5f,  0.5f,  0.0f, 1.0f},  // 52
+        // {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 53
 
-        {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 54
-        {1.5f, -0.5f,  0.5f,  1.0f, 0.0f},  // 55
-        {0.5f, -0.5f,  0.5f,  1.0f, 1.0f},  // 56
-        {0.5f, -0.5f,  0.5f,  1.0f, 1.0f},  // 57
-        {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},  // 58
-        {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 59
+        // {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 54
+        // {1.5f, -0.5f,  0.5f,  1.0f, 0.0f},  // 55
+        // {0.5f, -0.5f,  0.5f,  1.0f, 1.0f},  // 56
+        // {0.5f, -0.5f,  0.5f,  1.0f, 1.0f},  // 57
+        // {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},  // 58
+        // {1.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 59
 
-        {1.5f,  0.5f, -0.5f,  0.0f, 0.0f},  // 60
-        {1.5f,  0.5f,  0.5f,  1.0f, 0.0f},  // 61
-        {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 62
-        {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 63
-        {0.5f,  0.5f, -0.5f,  0.0f, 1.0f},  // 64
-        {1.5f,  0.5f, -0.5f,  0.0f, 0.0f},  // 65
+        // {1.5f,  0.5f, -0.5f,  0.0f, 0.0f},  // 60
+        // {1.5f,  0.5f,  0.5f,  1.0f, 0.0f},  // 61
+        // {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 62
+        // {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},  // 63
+        // {0.5f,  0.5f, -0.5f,  0.0f, 1.0f},  // 64
+        // {1.5f,  0.5f, -0.5f,  0.0f, 0.0f},  // 65
     
         },
         
@@ -303,14 +363,14 @@ int main() {
         12, 13, 14, 15, 16, 17, // Left face
         18, 19, 20, 21, 22, 23, // Right face
         24, 25, 26, 27, 28, 29, // Bottom face
-        30, 31, 32, 33, 34, 35, // Top
+        30, 31, 32, 33, 34, 35} // Top
 
         //Cube 2
-        36, 37, 38, 39, 40, 41,
-        42, 43, 44, 45, 46, 47, 
-        48, 49, 50, 51, 52, 53,
-        54, 55, 56, 57, 58, 59, 
-        60, 61, 62, 63, 64, 65
+        // 36, 37, 38, 39, 40, 41,
+        // 42, 43, 44, 45, 46, 47, 
+        // 48, 49, 50, 51, 52, 53,
+        // 54, 55, 56, 57, 58, 59, 
+        // 60, 61, 62, 63, 64, 65
         //66, 67, 68, 69, 70, 71
 
         // 72, 73, 74, 75, 76, 77
@@ -318,10 +378,17 @@ int main() {
         // 84, 85, 86, 87, 88, 89, 
         // 90, 91, 92, 93, 94, 95,
         // 96, 97, 98, 99, 100, 101
-        }
+        //}
     };
     
-    GLuint mesh = registerMesh(raw_mesh);
+    GLuint mesh1 = registerMesh(raw_mesh);
+    GLuint mesh2 = registerMesh(raw_mesh);
+    GLuint mesh3 = registerMesh(raw_mesh);
+    GLuint mesh4 = registerMesh(raw_mesh);
+    GLuint mesh5 = registerMesh(raw_mesh);
+    GLuint mesh6 = registerMesh(raw_mesh);
+    GLuint mesh7 = registerMesh(raw_mesh);
+    GLuint mesh8 = registerMesh(raw_mesh);
 
     //TEXTURE
     unsigned int texture;
@@ -359,28 +426,25 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         selectShaderProgram(shaderProgram);
-        // glm::mat4 trans = glm::mat4(1.0f);
-        // trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
-        // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-        // glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-        glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-        glm::mat4 view          = glm::mat4(1.0f);
-        glm::mat4 projection    = glm::mat4(1.0f);
-        view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));  
-        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        // retrieve the matrix uniform locations
-        unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
-        unsigned int viewLoc  = glGetUniformLocation(shaderProgram, "view");
-        unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+        
+        foo(glm::vec3(-0.5f, 0.0f, 0.0f), camera, shaderProgram);
+        drawMesh(mesh1, raw_mesh.getNumIndicies());
+        foo(glm::vec3(0.5f, 0.0f, 0.0f), camera, shaderProgram);
+        drawMesh(mesh2, raw_mesh.getNumIndicies());
+        foo(glm::vec3(-0.5f, -1.0f, 0.0f), camera, shaderProgram);
+        drawMesh(mesh3, raw_mesh.getNumIndicies());
+        foo(glm::vec3(0.5f, -1.0f, 0.0f), camera, shaderProgram);
+        drawMesh(mesh4, raw_mesh.getNumIndicies());
 
-        // pass them to the shaders (3 different ways)
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &projection[0][0]);
+        foo(glm::vec3(-0.5f, 0.0f, -1.0f), camera, shaderProgram);
+        drawMesh(mesh5, raw_mesh.getNumIndicies());
+        foo(glm::vec3(0.5f, 0.0f, -1.0f), camera, shaderProgram);
+        drawMesh(mesh6, raw_mesh.getNumIndicies());
+        foo(glm::vec3(-0.5f, -1.0f, -1.0f), camera, shaderProgram);
+        drawMesh(mesh7, raw_mesh.getNumIndicies());
+        foo(glm::vec3(0.5f, -1.0f, -1.0f), camera, shaderProgram);
+        drawMesh(mesh8, raw_mesh.getNumIndicies());
 
-
-        drawMesh(mesh, raw_mesh.getNumIndicies());
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
