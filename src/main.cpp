@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cmath>
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -16,9 +17,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-glm::vec3 camera = glm::vec3(0.0f, 0.0f, -3.0f);
+glm::vec3 camera = glm::vec3(0.0f, 0.0f, -10.0f);
 float camRot = 0;
 float cubeRotAng = 0.0f;
+
+//double rad(double deg) {
+//    return deg * (M_PI / 180.0);
+//}
 
 static void error_callback(int error, const char* description) {
     std::cerr << "Error: " << description << std::endl;
@@ -33,34 +38,34 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         camera += glm::vec3(0.1f, 0.0f, 0.0f);
     }
 
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
         std::cout << "Shift was Pressed :)" << std::endl; 
         camRot += 0.1;
     }
 
-    if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
         std::cout << "Shift was Pressed :)" << std::endl; 
         camRot -= 0.1;
     }
 
-    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) {
         std::cout << "UP was Pressed :)" << std::endl; 
         camera += glm::vec3(0.0f, 0.0f, 0.2f);
     }
 
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) {
         std::cout << "DOWN was Pressed :)" << std::endl; 
         camera += glm::vec3(0.0f, 0.0f, -0.2f);
     }
 
     if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
         std::cout << "Rotate left" << std::endl;
-        cubeRotAng -= glm::radians(30.0f); 
+        cubeRotAng -= glm::radians(45.0f); 
     }
 
     if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
         std::cout << "Rotate right" << std::endl;
-        cubeRotAng += glm::radians(30.0f); 
+        cubeRotAng += glm::radians(45.0f); 
     }
 }
 
@@ -196,7 +201,7 @@ GLuint registerMesh(const Mesh& mesh) {
     return vao;
 }
 
-void foo(glm::vec3 objPos, glm::vec3 camPos, GLuint shaderProgram) {
+void foo(float initAngle, glm::vec3 camPos, GLuint shaderProgram) {
     // glm::mat4 trans = glm::mat4(1.0f);
     // trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
     // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -208,9 +213,25 @@ void foo(glm::vec3 objPos, glm::vec3 camPos, GLuint shaderProgram) {
     projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 100.0f);
     view  = glm::translate(view, camPos);
     view = glm::rotate(view, camRot, glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::translate(view, objPos);
-    model = glm::rotate(model, cubeRotAng, glm::vec3(0.0f, 1.0f, 0.0f));  
-    
+    //model = glm::translate(model, objPos);
+    // float r = 1.0f;
+    // float x = r*cos(cubeRotAng + initAngle);
+    // float y = r*sin(cubeRotAng + initAngle);
+    // model = glm::translate(model, glm::vec3(x, y, 0.0f));
+    // model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(0.0f, 0.0f, 1.0f));  
+
+    float r = sqrt(2.0f)/2;
+    float x = r * cos(cubeRotAng + initAngle);
+    float y = r * sin(cubeRotAng + initAngle);
+
+    float rotAngle = 45.0f;
+
+    float x_new = x * cos(glm::radians(rotAngle)) - y * sin(glm::radians(rotAngle));
+    float y_new = x * sin(glm::radians(rotAngle)) + y * cos(glm::radians(rotAngle));
+
+    model = glm::translate(model, glm::vec3(x_new, y_new, 0.0f));
+    model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(0.0f, 0.0f, 1.0f));  
+
     // retrieve the matrix uniform locations
     unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
     unsigned int viewLoc  = glGetUniformLocation(shaderProgram, "view");
@@ -276,48 +297,95 @@ int main() {
         // {-0.5f,  0.5f, 0.0f,   0.0f, 1.0f}},  // top left 
 
         //Cube 1
-        {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
-        {0.5f, -0.5f, -0.5f,  1.0f, 0.0f},
-        {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
-        {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
+        // {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
+        // {0.5f, -0.5f, -0.5f,  1.0f, 0.0f},
+        // {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        // {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        // {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
+        // {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
 
-        {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-        {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
-        {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},
-        {0.5f,  0.5f,  0.5f,  1.0f, 1.0},
-        {-0.5f,  0.5f,  0.5f,  0.0f, 1.0f},
-        {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        // {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        // {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
+        // {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},
+        // {0.5f,  0.5f,  0.5f,  1.0f, 1.0},
+        // {-0.5f,  0.5f,  0.5f,  0.0f, 1.0f},
+        // {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
 
-        {-0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-        {-0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-        {-0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        // {-0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        // {-0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        // {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        // {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        // {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        // {-0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
 
-        {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-        {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-        {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        // {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        // {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        // {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        // {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        // {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        // {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
 
-        {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        {0.5f, -0.5f, -0.5f,  1.0f, 1.0f},
-        {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
-        {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
-        {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-        {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        // {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
+        // {0.5f, -0.5f, -0.5f,  1.0f, 1.0f},
+        // {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
+        // {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
+        // {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
+        // {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
 
-        {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
-        {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-        {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-        {-0.5f,  0.5f,  0.5f,  0.0f, 0.0f},
-        {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
+        // {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
+        // {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
+        // {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        // {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
+        // {-0.5f,  0.5f,  0.5f,  0.0f, 0.0f},
+        // {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
+        
+        //top, yellow
+        {-0.5f, -0.5f,  0.5f,  0.5f, 0.5f},
+        { 0.5f, -0.5f,  0.5f,  0.75f,  0.5f},
+        { 0.5f,  0.5f,  0.5f,  0.75f,  0.25f},
+        { 0.5f,  0.5f,  0.5f,  0.75f,  0.25f},
+        {-0.5f,  0.5f,  0.5f,  0.5f, 0.25f},
+        {-0.5f, -0.5f,  0.5f,  0.5f, 0.5f},
 
+        // bottom black
+        {-0.5f, -0.5f, -0.5f,  0.0f,   0.5f},
+        { 0.5f, -0.5f, -0.5f,  0.25f,  0.5f},
+        { 0.5f,  0.5f, -0.5f,  0.25f,  0.25f},
+        { 0.5f,  0.5f, -0.5f,  0.25f,  0.25f},
+        {-0.5f,  0.5f, -0.5f,  0.0f,   0.25f},
+        {-0.5f, -0.5f, -0.5f,  0.0f,   0.5f},
+
+        // front  red (square 5)
+        {-0.5f, -0.5f, -0.5f,  0.5f,   0.75f},
+        { 0.5f, -0.5f, -0.5f,  0.75f,  0.75f},
+        { 0.5f, -0.5f,  0.5f,  0.75f,  0.5f},
+        { 0.5f, -0.5f,  0.5f,  0.75f,  0.5f},
+        {-0.5f, -0.5f,  0.5f,  0.5f,   0.5f},
+        {-0.5f, -0.5f, -0.5f,  0.5f,   0.75f},  
+
+        // Left blue (square 6)
+        {-0.5f,  0.5f, -0.5f,  0.25f,  0.5f},
+        {-0.5f,  0.5f,  0.5f,  0.5f, 0.5f},
+        {-0.5f, -0.5f,  0.5f,  0.5f, 0.25f},
+        {-0.5f, -0.5f,  0.5f,  0.5f, 0.25f},
+        {-0.5f, -0.5f, -0.5f,  0.25f,  0.25f},
+        {-0.5f,  0.5f, -0.5f,  0.25f,  0.5f},
+
+        // back face (square 7)
+        {-0.5f,  0.5f,  0.5f, 0.5f,   0.25f}, 
+        { 0.5f,  0.5f,  0.5f, 0.75f,  0.25f}, 
+        { 0.5f,  0.5f, -0.5f, 0.75f,  0.0f}, 
+        { 0.5f,  0.5f, -0.5f, 0.75f,  0.0f}, 
+        {-0.5f,  0.5f, -0.5f, 0.5f,   0.0f}, 
+        {-0.5f,  0.5f,  0.5f, 0.5f,   0.25f}, 
+
+        // Right black (square 8)
+        { 0.5f,  0.5f,  0.5f,  0.75f,  0.5f},
+        { 0.5f,  0.5f, -0.5f,  1.0f, 0.5f},
+        { 0.5f, -0.5f, -0.5f,  1.0f, 0.25f},
+        { 0.5f, -0.5f, -0.5f,  1.0f, 0.25f},
+        { 0.5f, -0.5f,  0.5f,  0.75f,  0.25f},
+        { 0.5f,  0.5f,  0.5f,  0.75f,  0.5f}
         //Cube 2
         // {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 36
         // {1.5f, -0.5f, -0.5f,  1.0f, 0.0f},  // 37
@@ -401,7 +469,7 @@ int main() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // load and generate the texture
     int width, height, nrChannels;
-    unsigned char *data = stbi_load("../resource/yellow_cube.jpg", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("../resource/cube1.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -427,23 +495,32 @@ int main() {
 
         selectShaderProgram(shaderProgram);
         
-        foo(glm::vec3(-0.5f, 0.0f, 0.0f), camera, shaderProgram);
+        foo(0, camera, shaderProgram);
         drawMesh(mesh1, raw_mesh.getNumIndicies());
-        foo(glm::vec3(0.5f, 0.0f, 0.0f), camera, shaderProgram);
-        drawMesh(mesh2, raw_mesh.getNumIndicies());
-        foo(glm::vec3(-0.5f, -1.0f, 0.0f), camera, shaderProgram);
-        drawMesh(mesh3, raw_mesh.getNumIndicies());
-        foo(glm::vec3(0.5f, -1.0f, 0.0f), camera, shaderProgram);
-        drawMesh(mesh4, raw_mesh.getNumIndicies());
 
-        foo(glm::vec3(-0.5f, 0.0f, -1.0f), camera, shaderProgram);
-        drawMesh(mesh5, raw_mesh.getNumIndicies());
-        foo(glm::vec3(0.5f, 0.0f, -1.0f), camera, shaderProgram);
-        drawMesh(mesh6, raw_mesh.getNumIndicies());
-        foo(glm::vec3(-0.5f, -1.0f, -1.0f), camera, shaderProgram);
-        drawMesh(mesh7, raw_mesh.getNumIndicies());
-        foo(glm::vec3(0.5f, -1.0f, -1.0f), camera, shaderProgram);
-        drawMesh(mesh8, raw_mesh.getNumIndicies());
+        foo(glm::radians(90.0f), camera, shaderProgram);
+        drawMesh(mesh1, raw_mesh.getNumIndicies());
+
+        foo(glm::radians(180.0f), camera, shaderProgram);
+        drawMesh(mesh1, raw_mesh.getNumIndicies());
+
+        foo(glm::radians(270.0f), camera, shaderProgram);
+        drawMesh(mesh1, raw_mesh.getNumIndicies());
+        // foo(glm::vec3(0.5f, 0.0f, 0.0f), camera, shaderProgram);
+        // drawMesh(mesh2, raw_mesh.getNumIndicies());
+        // foo(glm::vec3(-0.5f, -1.0f, 0.0f), camera, shaderProgram);
+        // drawMesh(mesh3, raw_mesh.getNumIndicies());
+        // foo(glm::vec3(0.5f, -1.0f, 0.0f), camera, shaderProgram);
+        // drawMesh(mesh4, raw_mesh.getNumIndicies());
+
+        // foo(glm::vec3(-0.5f, 0.0f, -1.0f), camera, shaderProgram);
+        // drawMesh(mesh5, raw_mesh.getNumIndicies());
+        // foo(glm::vec3(0.5f, 0.0f, -1.0f), camera, shaderProgram);
+        // drawMesh(mesh6, raw_mesh.getNumIndicies());
+        // foo(glm::vec3(-0.5f, -1.0f, -1.0f), camera, shaderProgram);
+        // drawMesh(mesh7, raw_mesh.getNumIndicies());
+        // foo(glm::vec3(0.5f, -1.0f, -1.0f), camera, shaderProgram);
+        // drawMesh(mesh8, raw_mesh.getNumIndicies());
 
         glfwSwapBuffers(window);
         glfwPollEvents();
