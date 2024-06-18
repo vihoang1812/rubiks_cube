@@ -41,47 +41,50 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 
-    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
         std::cout << "Enter was Pressed :)" << std::endl; 
         cameraPos += glm::vec3(0.1f, 0.0f, 0.0f);
     }
 
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         std::cout << "Down was Pressed :)" << std::endl; 
         camRot += 0.1;
     }
 
-    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         std::cout << "Up was Pressed :)" << std::endl; 
         camRot -= 0.1;
     }
 
-    if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
         std::cout << "RIGHT_SHIFT was Pressed :)" << std::endl; 
         cameraPos += cameraSpeed * glm::vec3(0.0f, 0.0f, 0.2f);
     }
 
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         std::cout << "LEFT_SHIFT was Pressed :)" << std::endl; 
         cameraPos += cameraSpeed * glm::vec3(0.0f, 0.0f, -0.2f);
     }
 
-    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
         std::cout << "Rotate left" << std::endl;
-        cubeRotAng -= glm::radians(45.0f); 
+        cubeRotAng += glm::radians(45.0f); 
     }
 
-    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
         std::cout << "Rotate right" << std::endl;
-        cubeRotAng += glm::radians(45.0f); 
+        cubeRotAng -= glm::radians(45.0f); 
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
+
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         cameraPos -= cameraSpeed * cameraFront;
+
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
@@ -234,39 +237,34 @@ void renderCube(glm::vec3 objPos,float initAngle, glm::vec3 camPos, GLuint shade
     //view  = glm::translate(view, cameraPos);
     view = glm::rotate(view, camRot, glm::vec3(1.0f, 0.0f, 0.0f));
     //model = glm::translate(model, objPos);
-    // float r = 1.0f;
-    // float x = r*cos(cubeRotAng + initAngle);
-    // float y = r*sin(cubeRotAng + initAngle);
-    // model = glm::translate(model, glm::vec3(x, y, 0.0f));
-    // model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(0.0f, 0.0f, 1.0f));  
 
     //Z ROTATION
-    float r = sqrt(2.0f)/2;
-    float x = r * cos(cubeRotAng + initAngle);
-    float y = r * sin(cubeRotAng + initAngle);
-
-    float rotAngle = 45.0f;
-
-    float x_new = x * cos(glm::radians(rotAngle)) - y * sin(glm::radians(rotAngle));
-    float y_new = x * sin(glm::radians(rotAngle)) + y * cos(glm::radians(rotAngle));
-
-    model = glm::translate(model, glm::vec3(x_new, y_new, 0.0f));
-    model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(0.0f, 0.0f, 1.0f));  
-
-    //Y ROTATION - FRONT
     // float r = sqrt(2.0f)/2;
     // float x = r * cos(cubeRotAng + initAngle);
-    // float z = r * sin(cubeRotAng + initAngle);
+    // float y = r * sin(cubeRotAng + initAngle);
 
     // float rotAngle = 45.0f;
 
-    // float x_new = x * cos(glm::radians(rotAngle)) + z * sin(glm::radians(rotAngle));
-    // float z_new = -x * sin(glm::radians(rotAngle)) + z * cos(glm::radians(rotAngle));
+    // float x_new = x * cos(glm::radians(rotAngle)) - y * sin(glm::radians(rotAngle));
+    // float y_new = x * sin(glm::radians(rotAngle)) + y * cos(glm::radians(rotAngle));
 
-    // model = glm::translate(model, glm::vec3(x_new, 0.0f, z_new));
-    // model = glm::rotate(model, cubeRotAng + initAngle , glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around y-axis
+    // model = glm::translate(model, glm::vec3(x_new, y_new, 0.0f));
+    // model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(0.0f, 0.0f, 1.0f));  
 
-    // X ROTATION - SIDE
+    //Y ROTATION - FRONT
+    float r = sqrt(2.0f)/2;
+    float z = r * cos(cubeRotAng + initAngle);
+    float x = r * sin(cubeRotAng + initAngle);
+
+    float rotAngle = 45.0f;
+
+    float x_new = x * cos(glm::radians(rotAngle)) + z * sin(glm::radians(rotAngle));
+    float z_new = -x * sin(glm::radians(rotAngle)) + z * cos(glm::radians(rotAngle));
+
+    model = glm::translate(model, glm::vec3(x_new, 0.0f, z_new));
+    model = glm::rotate(model, cubeRotAng + initAngle , glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around y-axis
+
+    // // X ROTATION - SIDE
     // float r = sqrt(2.0f)/2;
     // float y = r * cos(cubeRotAng + initAngle);
     // float z = r * sin(cubeRotAng + initAngle);
@@ -278,7 +276,6 @@ void renderCube(glm::vec3 objPos,float initAngle, glm::vec3 camPos, GLuint shade
 
     // model = glm::translate(model, glm::vec3(0.0f, y_new, z_new));
     // model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around x-axis
-
 
     // retrieve the matrix uniform locations
     unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
@@ -338,54 +335,7 @@ int main() {
 
     Mesh raw_mesh = {
         {
-        // // positions          // texture coords
-        // {0.5f,  0.5f, 0.0f,   1.0f, 1.0f}, // top right
-        // {0.5f, -0.5f, 0.0f,   1.0f, 0.0f}, // bottom right
-        // {-0.5f, -0.5f, 0.0f,   0.0f, 0.0f}, // bottom left
-        // {-0.5f,  0.5f, 0.0f,   0.0f, 1.0f}},  // top left 
-
         //Cube 1
-        // {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
-        // {0.5f, -0.5f, -0.5f,  1.0f, 0.0f},
-        // {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        // {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        // {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
-        // {-0.5f, -0.5f, -0.5f,  0.0f, 0.0f},
-
-        // {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-        // {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
-        // {0.5f,  0.5f,  0.5f,  1.0f, 1.0f},
-        // {0.5f,  0.5f,  0.5f,  1.0f, 1.0},
-        // {-0.5f,  0.5f,  0.5f,  0.0f, 1.0f},
-        // {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-
-        // {-0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-        // {-0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        // {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        // {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        // {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-        // {-0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-
-        // {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-        // {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        // {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        // {0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        // {0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-        // {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-
-        // {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-        // {0.5f, -0.5f, -0.5f,  1.0f, 1.0f},
-        // {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
-        // {0.5f, -0.5f,  0.5f,  1.0f, 0.0f},
-        // {-0.5f, -0.5f,  0.5f,  0.0f, 0.0f},
-        // {-0.5f, -0.5f, -0.5f,  0.0f, 1.0f},
-
-        // {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
-        // {0.5f,  0.5f, -0.5f,  1.0f, 1.0f},
-        // {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-        // {0.5f,  0.5f,  0.5f,  1.0f, 0.0f},
-        // {-0.5f,  0.5f,  0.5f,  0.0f, 0.0f},
-        // {-0.5f,  0.5f, -0.5f,  0.0f, 1.0f},
         
         //top, yellow
         {-0.5f, -0.5f,  0.5f,  0.5f, 0.5f},
@@ -434,6 +384,7 @@ int main() {
         { 0.5f, -0.5f, -0.5f,  1.0f, 0.25f},
         { 0.5f, -0.5f,  0.5f,  0.75f,  0.25f},
         { 0.5f,  0.5f,  0.5f,  0.75f,  0.5f}
+
         //Cube 2
         // {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 36
         // {1.5f, -0.5f, -0.5f,  1.0f, 0.0f},  // 37
@@ -474,12 +425,12 @@ int main() {
         
         //Index
         //Cube 1
-        {0, 1, 2, 3, 4, 5,     // Back face
-        6, 7, 8, 9, 10, 11,   // Front face
-        12, 13, 14, 15, 16, 17, // Left face
-        18, 19, 20, 21, 22, 23, // Right face
-        24, 25, 26, 27, 28, 29, // Bottom face
-        30, 31, 32, 33, 34, 35} // Top
+        {0, 1, 2, 3, 4, 5,     // Top face
+        6, 7, 8, 9, 10, 11,   // Bottom face
+        12, 13, 14, 15, 16, 17, // Front face
+        18, 19, 20, 21, 22, 23, // Left face
+        24, 25, 26, 27, 28, 29, // Back face
+        30, 31, 32, 33, 34, 35} // Right face
 
         //Cube 2
         // 36, 37, 38, 39, 40, 41,
@@ -554,9 +505,9 @@ int main() {
 
         renderCube(glm::vec3(-0.5f, -1.0f, 0.0f), glm::radians(180.0f), cameraPos, shaderProgram);
         drawMesh(mesh3, raw_mesh.getNumIndicies());
-        
-        // renderCube(glm::vec3(0.5f, -1.0f, 0.0f), glm::radians(270.0f), cameraPos, shaderProgram);
-        // drawMesh(mesh4, raw_mesh.getNumIndicies());
+
+        renderCube(glm::vec3(0.5f, -1.0f, 0.0f), glm::radians(270.0f), cameraPos, shaderProgram);
+        drawMesh(mesh4, raw_mesh.getNumIndicies());
 
         // renderCube(glm::vec3(-0.5f, 0.0f, -1.0f), camera, shaderProgram);
         // drawMesh(mesh5, raw_mesh.getNumIndicies());
