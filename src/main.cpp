@@ -17,7 +17,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-glm::vec3 camera = glm::vec3(0.0f, 0.0f, -10.0f);
+//glm::vec3 camera = glm::vec3(0.0f, 0.0f, -10.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);    
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f;
 float camRot = 0;
 float cubeRotAng = 0.0f;
 
@@ -30,32 +36,34 @@ static void error_callback(int error, const char* description) {
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    const float cameraSpeed = 0.5f; // adjust accordingly
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
         std::cout << "Enter was Pressed :)" << std::endl; 
-        camera += glm::vec3(0.1f, 0.0f, 0.0f);
+        cameraPos += glm::vec3(0.1f, 0.0f, 0.0f);
     }
 
     if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
-        std::cout << "Shift was Pressed :)" << std::endl; 
+        std::cout << "Down was Pressed :)" << std::endl; 
         camRot += 0.1;
     }
 
     if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
-        std::cout << "Shift was Pressed :)" << std::endl; 
+        std::cout << "Up was Pressed :)" << std::endl; 
         camRot -= 0.1;
     }
 
     if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) {
-        std::cout << "UP was Pressed :)" << std::endl; 
-        camera += glm::vec3(0.0f, 0.0f, 0.2f);
+        std::cout << "RIGHT_SHIFT was Pressed :)" << std::endl; 
+        cameraPos += cameraSpeed * glm::vec3(0.0f, 0.0f, 0.2f);
     }
 
     if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) {
-        std::cout << "DOWN was Pressed :)" << std::endl; 
-        camera += glm::vec3(0.0f, 0.0f, -0.2f);
+        std::cout << "LEFT_SHIFT was Pressed :)" << std::endl; 
+        cameraPos += cameraSpeed * glm::vec3(0.0f, 0.0f, -0.2f);
     }
 
     if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
@@ -67,6 +75,15 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         std::cout << "Rotate right" << std::endl;
         cubeRotAng += glm::radians(45.0f); 
     }
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 
 //Hold our vertex information
@@ -201,7 +218,7 @@ GLuint registerMesh(const Mesh& mesh) {
     return vao;
 }
 
-void foo(float initAngle, glm::vec3 camPos, GLuint shaderProgram) {
+void renderCube(glm::vec3 objPos,float initAngle, glm::vec3 camPos, GLuint shaderProgram) {
     // glm::mat4 trans = glm::mat4(1.0f);
     // trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
     // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -211,7 +228,10 @@ void foo(float initAngle, glm::vec3 camPos, GLuint shaderProgram) {
     glm::mat4 projection    = glm::mat4(1.0f);
     
     projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 100.0f);
-    view  = glm::translate(view, camPos);
+
+    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
+    //view  = glm::translate(view, cameraPos);
     view = glm::rotate(view, camRot, glm::vec3(1.0f, 0.0f, 0.0f));
     //model = glm::translate(model, objPos);
     // float r = 1.0f;
@@ -220,6 +240,7 @@ void foo(float initAngle, glm::vec3 camPos, GLuint shaderProgram) {
     // model = glm::translate(model, glm::vec3(x, y, 0.0f));
     // model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(0.0f, 0.0f, 1.0f));  
 
+    //Z ROTATION
     float r = sqrt(2.0f)/2;
     float x = r * cos(cubeRotAng + initAngle);
     float y = r * sin(cubeRotAng + initAngle);
@@ -231,6 +252,33 @@ void foo(float initAngle, glm::vec3 camPos, GLuint shaderProgram) {
 
     model = glm::translate(model, glm::vec3(x_new, y_new, 0.0f));
     model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(0.0f, 0.0f, 1.0f));  
+
+    //Y ROTATION - FRONT
+    // float r = sqrt(2.0f)/2;
+    // float x = r * cos(cubeRotAng + initAngle);
+    // float z = r * sin(cubeRotAng + initAngle);
+
+    // float rotAngle = 45.0f;
+
+    // float x_new = x * cos(glm::radians(rotAngle)) + z * sin(glm::radians(rotAngle));
+    // float z_new = -x * sin(glm::radians(rotAngle)) + z * cos(glm::radians(rotAngle));
+
+    // model = glm::translate(model, glm::vec3(x_new, 0.0f, z_new));
+    // model = glm::rotate(model, cubeRotAng + initAngle , glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around y-axis
+
+    // X ROTATION - SIDE
+    // float r = sqrt(2.0f)/2;
+    // float y = r * cos(cubeRotAng + initAngle);
+    // float z = r * sin(cubeRotAng + initAngle);
+
+    // float rotAngle = 45.0f; 
+
+    // float y_new = y * cos(glm::radians(rotAngle)) - z * sin(glm::radians(rotAngle));
+    // float z_new = y * sin(glm::radians(rotAngle)) + z * cos(glm::radians(rotAngle));
+
+    // model = glm::translate(model, glm::vec3(0.0f, y_new, z_new));
+    // model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around x-axis
+
 
     // retrieve the matrix uniform locations
     unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
@@ -489,37 +537,34 @@ int main() {
 
     //Main Event Loop
     while(!glfwWindowShouldClose(window)) {
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
         glClearColor(0.2f, 0.3f, 0.6f, 1.0f);
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         selectShaderProgram(shaderProgram);
         
-        foo(0, camera, shaderProgram);
+        renderCube(glm::vec3(-0.5f, 0.0f, 0.0f), glm::radians(0.0f), cameraPos, shaderProgram);
         drawMesh(mesh1, raw_mesh.getNumIndicies());
 
-        foo(glm::radians(90.0f), camera, shaderProgram);
-        drawMesh(mesh1, raw_mesh.getNumIndicies());
+        renderCube(glm::vec3(0.5f, 0.0f, 0.0f), glm::radians(90.0f), cameraPos, shaderProgram);
+        drawMesh(mesh2, raw_mesh.getNumIndicies());
 
-        foo(glm::radians(180.0f), camera, shaderProgram);
-        drawMesh(mesh1, raw_mesh.getNumIndicies());
-
-        foo(glm::radians(270.0f), camera, shaderProgram);
-        drawMesh(mesh1, raw_mesh.getNumIndicies());
-        // foo(glm::vec3(0.5f, 0.0f, 0.0f), camera, shaderProgram);
-        // drawMesh(mesh2, raw_mesh.getNumIndicies());
-        // foo(glm::vec3(-0.5f, -1.0f, 0.0f), camera, shaderProgram);
-        // drawMesh(mesh3, raw_mesh.getNumIndicies());
-        // foo(glm::vec3(0.5f, -1.0f, 0.0f), camera, shaderProgram);
+        renderCube(glm::vec3(-0.5f, -1.0f, 0.0f), glm::radians(180.0f), cameraPos, shaderProgram);
+        drawMesh(mesh3, raw_mesh.getNumIndicies());
+        
+        // renderCube(glm::vec3(0.5f, -1.0f, 0.0f), glm::radians(270.0f), cameraPos, shaderProgram);
         // drawMesh(mesh4, raw_mesh.getNumIndicies());
 
-        // foo(glm::vec3(-0.5f, 0.0f, -1.0f), camera, shaderProgram);
+        // renderCube(glm::vec3(-0.5f, 0.0f, -1.0f), camera, shaderProgram);
         // drawMesh(mesh5, raw_mesh.getNumIndicies());
-        // foo(glm::vec3(0.5f, 0.0f, -1.0f), camera, shaderProgram);
+        // renderCube(glm::vec3(0.5f, 0.0f, -1.0f), camera, shaderProgram);
         // drawMesh(mesh6, raw_mesh.getNumIndicies());
-        // foo(glm::vec3(-0.5f, -1.0f, -1.0f), camera, shaderProgram);
+        // renderCube(glm::vec3(-0.5f, -1.0f, -1.0f), camera, shaderProgram);
         // drawMesh(mesh7, raw_mesh.getNumIndicies());
-        // foo(glm::vec3(0.5f, -1.0f, -1.0f), camera, shaderProgram);
+        // renderCube(glm::vec3(0.5f, -1.0f, -1.0f), camera, shaderProgram);
         // drawMesh(mesh8, raw_mesh.getNumIndicies());
 
         glfwSwapBuffers(window);
