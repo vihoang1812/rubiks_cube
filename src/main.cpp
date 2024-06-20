@@ -22,9 +22,15 @@ glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);    
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
+float rotateX = 0.0f;
+float rotateY = 0.0f;
+float rotateZ = 0.0f;
+
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
-float camRot = 0;
+float camRotX = 0;
+float camRotY = 0;
+float camRotZ = 0;
 float cubeRotAng = 0.0f;
 
 //double rad(double deg) {
@@ -48,32 +54,32 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         std::cout << "Down was Pressed :)" << std::endl; 
-        camRot += 0.1;
+        camRotX += 0.1;
     }
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         std::cout << "Up was Pressed :)" << std::endl; 
-        camRot -= 0.1;
+        camRotX -= 0.1;
     }
 
     if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
         std::cout << "RIGHT_SHIFT was Pressed :)" << std::endl; 
-        cameraPos += cameraSpeed * glm::vec3(0.0f, 0.0f, 0.2f);
+        camRotZ += 0.1f;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         std::cout << "LEFT_SHIFT was Pressed :)" << std::endl; 
-        cameraPos += cameraSpeed * glm::vec3(0.0f, 0.0f, -0.2f);
+        camRotZ -= 0.1f;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        std::cout << "Rotate left" << std::endl;
-        cubeRotAng += glm::radians(45.0f); 
+        std::cout << "Left was Pressed :)" << std::endl; 
+        camRotY += 0.1f; 
     }
 
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        std::cout << "Rotate right" << std::endl;
-        cubeRotAng -= glm::radians(45.0f); 
+        std::cout << "Right was Pressed :)" << std::endl; 
+        camRotY -= 0.1f; // Rotate around Y-axis (left and right)
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -87,6 +93,21 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+        rotateX += 90.0f; 
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+        rotateX -= 90.0f; 
+
+    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+        rotateY += 90.0f; 
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        rotateY -= 90.0f; 
+        
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+        rotateZ += 90.0f; 
+    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+        rotateZ -= 90.0f; 
 }
 
 //Hold our vertex information
@@ -221,7 +242,14 @@ GLuint registerMesh(const Mesh& mesh) {
     return vao;
 }
 
-void renderCube(glm::vec3 objPos,float initAngle, glm::vec3 camPos, GLuint shaderProgram) {
+struct Cube {
+    float curRot = 0.0f;
+    glm::vec3 cubePos = glm::vec3(0.0f, 0.0f, 0.0f);
+    int curStage = 0;
+    Cube(glm::vec3 cubePos, float curRot, int curStage) : cubePos(cubePos), curRot(curRot), curStage(curStage) {}
+};
+
+void renderCube(Cube cube, glm::vec3 cameraPos, GLuint shaderProgram) {
     // glm::mat4 trans = glm::mat4(1.0f);
     // trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
     // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -235,9 +263,40 @@ void renderCube(glm::vec3 objPos,float initAngle, glm::vec3 camPos, GLuint shade
     view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
     //view  = glm::translate(view, cameraPos);
-    view = glm::rotate(view, camRot, glm::vec3(1.0f, 0.0f, 0.0f));
-    //model = glm::translate(model, objPos);
+    view = glm::rotate(view, camRotX, glm::vec3(1.0f, 0.0f, 0.0f));
+    view = glm::rotate(view, camRotY, glm::vec3(0.0f, 1.0f, 0.0f));
+    view = glm::rotate(view, camRotZ, glm::vec3(0.0f, 0.0f, 1.0f));
 
+    glm::vec3 objPos = cube.cubePos;
+
+    model = glm::translate(model, objPos);
+
+    // X-axis rotation
+    
+    // float x1 = objPos.x;
+    // float y1 = objPos.y * cos(glm::radians(rotateX)) - objPos.z * sin(glm::radians(rotateX));
+    // float z1 = objPos.y * sin(glm::radians(rotateX)) + objPos.z * cos(glm::radians(rotateX));
+
+    // // Y-axis rotation
+    // float x2 = x1 * cos(glm::radians(rotateY)) + objPos.z * sin(glm::radians(rotateY));
+    // float y2 = y1;
+    // float z2 = -x1 * sin(glm::radians(rotateY)) + objPos.z * cos(glm::radians(rotateY));
+
+    // // Z-axis rotation
+    
+    // float x_new = x2 * cos(glm::radians(rotateZ)) - y2 * sin(glm::radians(rotateZ));
+    // float y_new = x2 * sin(glm::radians(rotateZ)) + y2 * cos(glm::radians(rotateZ));
+    // float z_new = z2;
+
+    // // Update object position
+    // objPos.x = x_new;
+    // objPos.y = y_new;
+    // objPos.z = z_new;
+
+    model = glm::rotate(model, glm::radians(rotateX), glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
+    model = glm::rotate(model, glm::radians(rotateY), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around Y-axis
+    model = glm::rotate(model, glm::radians(rotateZ), glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z-axis
+    
     //Z ROTATION
     // float r = sqrt(2.0f)/2;
     // float x = r * cos(cubeRotAng + initAngle);
@@ -252,18 +311,18 @@ void renderCube(glm::vec3 objPos,float initAngle, glm::vec3 camPos, GLuint shade
     // model = glm::rotate(model, cubeRotAng + initAngle, glm::vec3(0.0f, 0.0f, 1.0f));  
 
     //Y ROTATION - FRONT
-    float r = sqrt(2.0f)/2;
-    float z = r * cos(cubeRotAng + initAngle);
-    float x = r * sin(cubeRotAng + initAngle);
+    // float r = sqrt(2.0f)/2;
+    // float z = r * cos(cubeRotAng + initAngle);
+    // float x = r * sin(cubeRotAng + initAngle);
 
-    float rotAngle = 45.0f;
+    // float rotAngle = 45.0f;
 
-    float x_new = x * cos(glm::radians(rotAngle)) + z * sin(glm::radians(rotAngle));
-    float z_new = -x * sin(glm::radians(rotAngle)) + z * cos(glm::radians(rotAngle));
+    // float x_new = x * cos(glm::radians(rotAngle)) + z * sin(glm::radians(rotAngle));
+    // float z_new = -x * sin(glm::radians(rotAngle)) + z * cos(glm::radians(rotAngle));
 
-    model = glm::translate(model, glm::vec3(x_new, 0.0f, z_new));
-    model = glm::rotate(model, cubeRotAng + initAngle , glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around y-axis
-
+    // model = glm::translate(model, glm::vec3(x_new, 0.0f, z_new));
+    // model = glm::rotate(model, cubeRotAng + initAngle , glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around y-axis
+   
     // // X ROTATION - SIDE
     // float r = sqrt(2.0f)/2;
     // float y = r * cos(cubeRotAng + initAngle);
@@ -496,27 +555,44 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         selectShaderProgram(shaderProgram);
-        
-        renderCube(glm::vec3(-0.5f, 0.0f, 0.0f), glm::radians(0.0f), cameraPos, shaderProgram);
-        drawMesh(mesh1, raw_mesh.getNumIndicies());
+        Cube cube0 = Cube(glm::vec3(-0.5f, 0.5f, 0.5f),   glm::radians(0.0f),   0);
+        Cube cube1 = Cube(glm::vec3(0.5f, 0.5f, 0.5f),    glm::radians(90.0f),  1);
+        Cube cube2 = Cube(glm::vec3(-0.5f, -0.5f, 0.5f),  glm::radians(180.0f), 2);
+        Cube cube3 = Cube(glm::vec3(0.5f, -0.5f, 0.5f),   glm::radians(270.0f), 3);
+        Cube cube4 = Cube(glm::vec3(-0.5f, 0.5f, -0.5f),  glm::radians(0.0f),   4);
+        Cube cube5 = Cube(glm::vec3(0.5f, 0.5f, -0.5f),   glm::radians(90.0f),  5);
+        Cube cube6 = Cube(glm::vec3(-0.5f, -0.5f, -0.5f), glm::radians(180.0f), 6);
+        Cube cube7 = Cube(glm::vec3(0.5f, -0.5f, -0.5f),  glm::radians(270.0f), 7);
 
-        renderCube(glm::vec3(0.5f, 0.0f, 0.0f), glm::radians(90.0f), cameraPos, shaderProgram);
-        drawMesh(mesh2, raw_mesh.getNumIndicies());
+        std::vector<Cube> cubeData = {cube0, cube1, cube2, cube3, cube4, cube5, cube6, cube7};
+        for (auto cube : cubeData) {
+            renderCube(cube, cameraPos, shaderProgram);
+            drawMesh(mesh1, raw_mesh.getNumIndicies());
+        }
+        // renderCube(glm::vec3(-0.5f, 0.5f, 0.5f), glm::radians(0.0f), cameraPos, shaderProgram);   // Top face, left cubelet
+        // drawMesh(mesh1, raw_mesh.getNumIndicies());
 
-        renderCube(glm::vec3(-0.5f, -1.0f, 0.0f), glm::radians(180.0f), cameraPos, shaderProgram);
-        drawMesh(mesh3, raw_mesh.getNumIndicies());
+        // renderCube(glm::vec3(0.5f, 0.5f, 0.5f), glm::radians(90.0f), cameraPos, shaderProgram);    // Top face, right cubelet
+        // drawMesh(mesh2, raw_mesh.getNumIndicies());
 
-        renderCube(glm::vec3(0.5f, -1.0f, 0.0f), glm::radians(270.0f), cameraPos, shaderProgram);
-        drawMesh(mesh4, raw_mesh.getNumIndicies());
+        // renderCube(glm::vec3(-0.5f, -0.5f, 0.5f), glm::radians(180.0f), cameraPos, shaderProgram); // Bottom face, left cubelet
+        // drawMesh(mesh3, raw_mesh.getNumIndicies());
 
-        // renderCube(glm::vec3(-0.5f, 0.0f, -1.0f), camera, shaderProgram);
+        // renderCube(glm::vec3(0.5f, -0.5f, 0.5f), glm::radians(270.0f), cameraPos, shaderProgram);  // Bottom face, right cubelet
+        // drawMesh(mesh4, raw_mesh.getNumIndicies());
+
+        // renderCube(glm::vec3(-0.5f, 0.5f, -0.5f), glm::radians(0.0f), cameraPos, shaderProgram);   // Top-left
         // drawMesh(mesh5, raw_mesh.getNumIndicies());
-        // renderCube(glm::vec3(0.5f, 0.0f, -1.0f), camera, shaderProgram);
+
+        // renderCube(glm::vec3(0.5f, 0.5f, -0.5f), glm::radians(90.0f), cameraPos, shaderProgram);    // Top-right
         // drawMesh(mesh6, raw_mesh.getNumIndicies());
-        // renderCube(glm::vec3(-0.5f, -1.0f, -1.0f), camera, shaderProgram);
+
+        // renderCube(glm::vec3(-0.5f, -0.5f, -0.5f), glm::radians(180.0f), cameraPos, shaderProgram); // Bottom-left
         // drawMesh(mesh7, raw_mesh.getNumIndicies());
-        // renderCube(glm::vec3(0.5f, -1.0f, -1.0f), camera, shaderProgram);
+
+        // renderCube(glm::vec3(0.5f, -0.5f, -0.5f), glm::radians(270.0f), cameraPos, shaderProgram);  // Bottom-right
         // drawMesh(mesh8, raw_mesh.getNumIndicies());
+        
 
         glfwSwapBuffers(window);
         glfwPollEvents();
