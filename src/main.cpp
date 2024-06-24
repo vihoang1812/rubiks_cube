@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <cmath>
+#include <map>
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -245,8 +246,9 @@ GLuint registerMesh(const Mesh& mesh) {
 struct Cube {
     float curRot = 0.0f;
     glm::vec3 cubePos = glm::vec3(0.0f, 0.0f, 0.0f);
-    int curStage = 0;
-    Cube(glm::vec3 cubePos, float curRot, int curStage) : cubePos(cubePos), curRot(curRot), curStage(curStage) {}
+    int curState = 0;
+    GLuint textureID;
+    Cube(glm::vec3 cubePos, float curRot, int curState, GLuint textureID) : cubePos(cubePos), curRot(curRot), curState(curState), textureID(textureID) {}
 };
 
 void renderCube(Cube cube, glm::vec3 cameraPos, GLuint shaderProgram) {
@@ -345,6 +347,9 @@ void renderCube(Cube cube, glm::vec3 cameraPos, GLuint shaderProgram) {
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &projection[0][0]);
+
+    glActiveTexture(GL_TEXTURE0); // Activate texture unit
+    glBindTexture(GL_TEXTURE_2D, cube.textureID); // Bind the cube's texture
 }
 
 void drawMesh(GLuint drawableId, GLuint totalIndicies) {
@@ -355,6 +360,46 @@ void drawMesh(GLuint drawableId, GLuint totalIndicies) {
     glBindVertexArray(drawableId);
     glDrawElements(GL_TRIANGLES, totalIndicies, GL_UNSIGNED_INT, 0);
 }
+
+GLuint loadTexture(const char* path, GLuint shaderProgram) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << path << std::endl;
+    }
+
+    stbi_image_free(data);
+    GLuint textureLocation = glGetUniformLocation(shaderProgram, "ourTexture");
+    glUniform1i(textureLocation, 0); 
+
+    return textureID;
+}
+
+enum class StatePos {
+    pos_0,
+    pos_1,
+    pos_2,
+    pos_3,
+    pos_4,
+    pos_5,
+    pos_6,
+    pos_7
+};
 
 int main() {
     std::cout << "Hello OpenGL" << std::endl;
@@ -397,12 +442,12 @@ int main() {
         //Cube 1
         
         //top, yellow
-        {-0.5f, -0.5f,  0.5f,  0.5f, 0.5f},
-        { 0.5f, -0.5f,  0.5f,  0.75f,  0.5f},
-        { 0.5f,  0.5f,  0.5f,  0.75f,  0.25f},
-        { 0.5f,  0.5f,  0.5f,  0.75f,  0.25f},
-        {-0.5f,  0.5f,  0.5f,  0.5f, 0.25f},
-        {-0.5f, -0.5f,  0.5f,  0.5f, 0.5f},
+        {-0.5f, -0.5f,  0.5f,  0.5f,  0.5f},
+        { 0.5f, -0.5f,  0.5f,  0.75f, 0.5f},
+        { 0.5f,  0.5f,  0.5f,  0.75f, 0.25f},
+        { 0.5f,  0.5f,  0.5f,  0.75f, 0.25f},
+        {-0.5f,  0.5f,  0.5f,  0.5f,  0.25f},
+        {-0.5f, -0.5f,  0.5f,  0.5f,  0.5f},
 
         // bottom black
         {-0.5f, -0.5f, -0.5f,  0.0f,   0.5f},
@@ -421,12 +466,12 @@ int main() {
         {-0.5f, -0.5f, -0.5f,  0.5f,   0.75f},  
 
         // Left blue (square 6)
-        {-0.5f,  0.5f, -0.5f,  0.25f,  0.5f},
-        {-0.5f,  0.5f,  0.5f,  0.5f, 0.5f},
-        {-0.5f, -0.5f,  0.5f,  0.5f, 0.25f},
-        {-0.5f, -0.5f,  0.5f,  0.5f, 0.25f},
-        {-0.5f, -0.5f, -0.5f,  0.25f,  0.25f},
-        {-0.5f,  0.5f, -0.5f,  0.25f,  0.5f},
+        {-0.5f,  0.5f, -0.5f,  0.25f, 0.5f},
+        {-0.5f,  0.5f,  0.5f,  0.5f,  0.5f},
+        {-0.5f, -0.5f,  0.5f,  0.5f,  0.25f},
+        {-0.5f, -0.5f,  0.5f,  0.5f,  0.25f},
+        {-0.5f, -0.5f, -0.5f,  0.25f, 0.25f},
+        {-0.5f,  0.5f, -0.5f,  0.25f, 0.5f},
 
         // back face (square 7)
         {-0.5f,  0.5f,  0.5f, 0.5f,   0.25f}, 
@@ -437,12 +482,12 @@ int main() {
         {-0.5f,  0.5f,  0.5f, 0.5f,   0.25f}, 
 
         // Right black (square 8)
-        { 0.5f,  0.5f,  0.5f,  0.75f,  0.5f},
-        { 0.5f,  0.5f, -0.5f,  1.0f, 0.5f},
-        { 0.5f, -0.5f, -0.5f,  1.0f, 0.25f},
-        { 0.5f, -0.5f, -0.5f,  1.0f, 0.25f},
-        { 0.5f, -0.5f,  0.5f,  0.75f,  0.25f},
-        { 0.5f,  0.5f,  0.5f,  0.75f,  0.5f}
+        { 0.5f,  0.5f,  0.5f,  0.75f, 0.5f},
+        { 0.5f,  0.5f, -0.5f,  1.0f,  0.5f},
+        { 0.5f, -0.5f, -0.5f,  1.0f,  0.25f},
+        { 0.5f, -0.5f, -0.5f,  1.0f,  0.25f},
+        { 0.5f, -0.5f,  0.5f,  0.75f, 0.25f},
+        { 0.5f,  0.5f,  0.5f,  0.75f, 0.5f}
 
         //Cube 2
         // {0.5f, -0.5f, -0.5f,  0.0f, 0.0f},  // 36
@@ -508,42 +553,61 @@ int main() {
     };
     
     GLuint mesh1 = registerMesh(raw_mesh);
-    GLuint mesh2 = registerMesh(raw_mesh);
-    GLuint mesh3 = registerMesh(raw_mesh);
-    GLuint mesh4 = registerMesh(raw_mesh);
-    GLuint mesh5 = registerMesh(raw_mesh);
-    GLuint mesh6 = registerMesh(raw_mesh);
-    GLuint mesh7 = registerMesh(raw_mesh);
-    GLuint mesh8 = registerMesh(raw_mesh);
+    // GLuint mesh2 = registerMesh(raw_mesh);
+    // GLuint mesh3 = registerMesh(raw_mesh);
+    // GLuint mesh4 = registerMesh(raw_mesh);
+    // GLuint mesh5 = registerMesh(raw_mesh);
+    // GLuint mesh6 = registerMesh(raw_mesh);
+    // GLuint mesh7 = registerMesh(raw_mesh);
+    // GLuint mesh8 = registerMesh(raw_mesh);
 
-    //TEXTURE
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    // set the texture wrapping/filtering options (on the currently bound texture object)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load and generate the texture
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load("../resource/cube1.jpg", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
 
-    GLuint textureLocation = glGetUniformLocation(shaderProgram, "ourTexture");
-    glUniform1i(textureLocation, 0); // Bind the texture to texture unit 0
+    // //TEXTURE
+    // unsigned int texture;
+    // glGenTextures(1, &texture);
+    // glBindTexture(GL_TEXTURE_2D, texture);
+    // // set the texture wrapping/filtering options (on the currently bound texture object)
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // // load and generate the texture
+    // int width, height, nrChannels;
+    // unsigned char *data = stbi_load("../resource/cube1.jpg", &width, &height, &nrChannels, 0);
+    // if (data)
+    // {
+    //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    //     glGenerateMipmap(GL_TEXTURE_2D);
+    // }
+    // else
+    // {
+    //     std::cout << "Failed to load texture" << std::endl;
+    // }
+    // stbi_image_free(data);
+
+    // GLuint textureLocation = glGetUniformLocation(shaderProgram, "ourTexture");
+    // glUniform1i(textureLocation, 0); // Bind the texture to texture unit 0
 
     //TRANSFORM
     // unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform"); //new
+    std::map<StatePos,glm::vec3> posFromState;
+    posFromState[StatePos::pos_0] = glm::vec3(0.5f, 0.5f, 0.5f);
+    posFromState[StatePos::pos_1] = glm::vec3(-0.5f, 0.5f, 0.5f); 
+    posFromState[StatePos::pos_2] = glm::vec3(-0.5f, -0.5f, 0.5f);
+    posFromState[StatePos::pos_3] = glm::vec3(0.5f, -0.5f, 0.5f);
+    posFromState[StatePos::pos_4] = glm::vec3(0.5f, 0.5f, -0.5f);
+    posFromState[StatePos::pos_5] = glm::vec3(-0.5f, 0.5f, -0.5f);
+    posFromState[StatePos::pos_6] = glm::vec3(-0.5f, -0.5f, -0.5f);
+    posFromState[StatePos::pos_7] = glm::vec3(0.5f, -0.5f, -0.5f);
+
+    GLuint texture0 = loadTexture("../resource/cube0.jpg", shaderProgram);
+    GLuint texture1 = loadTexture("../resource/cube1.jpg", shaderProgram);
+    GLuint texture2 = loadTexture("../resource/cube2.jpg", shaderProgram);
+    GLuint texture3 = loadTexture("../resource/cube3.jpg", shaderProgram);
+    GLuint texture4 = loadTexture("../resource/cube4.jpg", shaderProgram);
+    GLuint texture5 = loadTexture("../resource/cube5.jpg", shaderProgram);
+    GLuint texture6 = loadTexture("../resource/cube6.jpg", shaderProgram);
+    GLuint texture7 = loadTexture("../resource/cube7.jpg", shaderProgram);
 
     //Main Event Loop
     while(!glfwWindowShouldClose(window)) {
@@ -555,20 +619,22 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         selectShaderProgram(shaderProgram);
-        Cube cube0 = Cube(glm::vec3(-0.5f, 0.5f, 0.5f),   glm::radians(0.0f),   0);
-        Cube cube1 = Cube(glm::vec3(0.5f, 0.5f, 0.5f),    glm::radians(90.0f),  1);
-        Cube cube2 = Cube(glm::vec3(-0.5f, -0.5f, 0.5f),  glm::radians(180.0f), 2);
-        Cube cube3 = Cube(glm::vec3(0.5f, -0.5f, 0.5f),   glm::radians(270.0f), 3);
-        Cube cube4 = Cube(glm::vec3(-0.5f, 0.5f, -0.5f),  glm::radians(0.0f),   4);
-        Cube cube5 = Cube(glm::vec3(0.5f, 0.5f, -0.5f),   glm::radians(90.0f),  5);
-        Cube cube6 = Cube(glm::vec3(-0.5f, -0.5f, -0.5f), glm::radians(180.0f), 6);
-        Cube cube7 = Cube(glm::vec3(0.5f, -0.5f, -0.5f),  glm::radians(270.0f), 7);
+        Cube cube0 = Cube(glm::vec3(0.5f, 0.5f, 0.5f),    glm::radians(0.0f),   0, texture0);
+        Cube cube1 = Cube(glm::vec3(-0.5f, 0.5f, 0.5f),   glm::radians(90.0f),  1, texture1);
+        Cube cube2 = Cube(glm::vec3(-0.5f, -0.5f, 0.5f),  glm::radians(180.0f), 2, texture2);
+        Cube cube3 = Cube(glm::vec3(0.5f, -0.5f, 0.5f),   glm::radians(270.0f), 3, texture3);
+        Cube cube4 = Cube(glm::vec3(0.5f, 0.5f, -0.5f),   glm::radians(0.0f),   4, texture4);
+        Cube cube5 = Cube(glm::vec3(-0.5f, 0.5f, -0.5f),  glm::radians(90.0f),  5, texture5);
+        Cube cube6 = Cube(glm::vec3(-0.5f, -0.5f, -0.5f), glm::radians(180.0f), 6, texture6);
+        Cube cube7 = Cube(glm::vec3(0.5f, -0.5f, -0.5f),  glm::radians(270.0f), 7, texture7);
 
-        std::vector<Cube> cubeData = {cube0, cube1, cube2, cube3, cube4, cube5, cube6, cube7};
+     
+        std::vector<Cube> cubeData = {cube0,cube1,cube2,cube3,cube4,cube5,cube6,cube7};
         for (auto cube : cubeData) {
             renderCube(cube, cameraPos, shaderProgram);
             drawMesh(mesh1, raw_mesh.getNumIndicies());
         }
+
         // renderCube(glm::vec3(-0.5f, 0.5f, 0.5f), glm::radians(0.0f), cameraPos, shaderProgram);   // Top face, left cubelet
         // drawMesh(mesh1, raw_mesh.getNumIndicies());
 
