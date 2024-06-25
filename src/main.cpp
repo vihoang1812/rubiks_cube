@@ -4,6 +4,7 @@
 #include <string>
 #include <cmath>
 #include <map>
+#include <stdexcept>
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -18,32 +19,711 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+//WINDOW SIZE
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
 //glm::vec3 camera = glm::vec3(0.0f, 0.0f, -10.0f);
 glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);    
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
-float rotateX = 0.0f;
-float rotateY = 0.0f;
-float rotateZ = 0.0f;
+//float rotateX = 0.0f;
+//float rotateY = 0.0f;
+//float rotateZ = 0.0f;
 
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 float camRotX = 0;
 float camRotY = 0;
 float camRotZ = 0;
-float cubeRotAng = 0.0f;
+
+//float cubeRotAng = 0.0f;
 
 //double rad(double deg) {
 //    return deg * (M_PI / 180.0);
 //}
 
+//Hold our vertex information
+// * the location for each of our verticies
+// * the ordering for how we should draw (indexData)
+
+class Mesh {
+private:
+    std::vector<float> vertexData;
+    std::vector<uint32_t> indexData;
+public:
+    Mesh() = default;
+    Mesh(const std::vector<std::vector<float>>& vertexData, const std::vector<uint32_t>& indexData) {
+        for(auto row : vertexData) {
+            for(auto e : row) {
+                this->vertexData.push_back(e);        
+            }
+        }
+
+        for(auto e : indexData) this->indexData.push_back(e);
+    }
+
+    size_t getVertexDataSize() const {
+        return vertexData.size() * sizeof(float);
+    }
+
+    size_t getIndexDataSize() const {
+        return indexData.size() * sizeof(uint32_t);
+    }
+
+    std::vector<float> getVertexData() const {
+        return vertexData;
+    }
+    std::vector<uint32_t> getIndexData() const {
+        return indexData;
+    }
+
+    size_t getNumIndicies() {
+        return indexData.size();
+    }
+};
+
+enum class StatePos {
+    pos_0,
+    pos_1,
+    pos_2,
+    pos_3,
+    pos_4,
+    pos_5,
+    pos_6,
+    pos_7
+};
+
+struct PosFromState {
+    glm::vec3 operator[](StatePos pos) {
+        switch(pos) {
+            case StatePos::pos_0: return glm::vec3( 0.5f,  0.5f,  0.5f);
+            case StatePos::pos_1: return glm::vec3(-0.5f,  0.5f,  0.5f);
+            case StatePos::pos_2: return glm::vec3(-0.5f, -0.5f,  0.5f);
+            case StatePos::pos_3: return glm::vec3( 0.5f, -0.5f,  0.5f);
+            case StatePos::pos_4: return glm::vec3( 0.5f,  0.5f, -0.5f);
+            case StatePos::pos_5: return glm::vec3(-0.5f,  0.5f, -0.5f);
+            case StatePos::pos_6: return glm::vec3(-0.5f, -0.5f, -0.5f);
+            case StatePos::pos_7: return glm::vec3( 0.5f, -0.5f, -0.5f);
+        }
+    }
+};
+PosFromState posFromState;
+
+struct Cube {
+    float xRot = 0;
+    float yRot = 0;
+    float zRot = 0;
+    glm::vec3 curPos = {0.0f, 0.0f, 0.0f};
+    StatePos curState;
+    GLuint textureID;
+    Cube(glm::vec3 curPos, StatePos curState, GLuint textureID) : curPos(curPos), curState(curState), textureID(textureID) {}
+    void setState(StatePos nextState) {
+        curState = nextState;
+        curPos = posFromState[nextState];
+    }
+
+    StatePos getState() {
+        return curState;
+    }
+};
+
+std::vector<Cube> cubeData;
+
+// std::map<StatePos, std::any> posFromState;
+
+// posFromState[StatePos::pos_0] = glm::vec3( 0.5f,  0.5f,  0.5f);
+// posFromState[StatePos::pos_1] = glm::vec3(-0.5f,  0.5f,  0.5f); 
+// posFromState[StatePos::pos_2] = glm::vec3(-0.5f, -0.5f,  0.5f);
+// posFromState[StatePos::pos_3] = glm::vec3( 0.5f, -0.5f,  0.5f);
+// posFromState[StatePos::pos_4] = glm::vec3( 0.5f,  0.5f, -0.5f);
+// posFromState[StatePos::pos_5] = glm::vec3(-0.5f,  0.5f, -0.5f);
+// posFromState[StatePos::pos_6] = glm::vec3(-0.5f, -0.5f, -0.5f);
+// posFromState[StatePos::pos_7] = glm::vec3( 0.5f, -0.5f, -0.5f);
+
 static void error_callback(int error, const char* description) {
     std::cerr << "Error: " << description << std::endl;
 }
 
+static void rotate_cube_x(Cube& cube) {
+    cube.xRot -= 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_4);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_6);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_3);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_x_inv(Cube& cube) {
+    cube.xRot += 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_3);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_6);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_4);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_y(Cube& cube) {
+    cube.yRot -= 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_6);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_4);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_3);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_y_inv(Cube& cube) {
+    cube.yRot += 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_4);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_3);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_6);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_z(Cube& cube) {
+    cube.zRot += 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_3);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_6);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_4);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_z_inv(Cube& cube) {
+    cube.zRot -= 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_3);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_4);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_6);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_right(Cube& cube) {
+    cube.xRot -= 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_4);
+            break;
+        // case StatePos::pos_1:
+        //     cube.setState(StatePos::pos_1);
+        //     break;
+        // case StatePos::pos_2:
+        //     cube.setState(StatePos::pos_2);
+        //     break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_7);
+            break;
+        // case StatePos::pos_5:
+        //     cube.setState(StatePos::pos_5);
+        //     break;
+        // case StatePos::pos_6:
+        //     cube.setState(StatePos::pos_6);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_3);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_right_inv(Cube& cube) {
+    cube.xRot += 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_3);
+            break;
+        // case StatePos::pos_1:
+        //     cube.setState(StatePos::pos_1);
+        //     break;
+        // case StatePos::pos_2:
+        //     cube.setState(StatePos::pos_2);
+        //     break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_0);
+            break;
+        // case StatePos::pos_5:
+        //     cube.setState(StatePos::pos_5);
+        //     break;
+        // case StatePos::pos_6:
+        //     cube.setState(StatePos::pos_6);
+        //     break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_4);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_left(Cube& cube) {
+    cube.xRot -= 90;
+    switch(cube.curState) {
+        // case StatePos::pos_0:
+        //     cube.setState(StatePos::pos_0);
+        //     break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_1);
+            break;
+        // case StatePos::pos_3:
+        //     cube.setState(StatePos::pos_3);
+        //     break;
+        // case StatePos::pos_4:
+        //     cube.setState(StatePos::pos_4);
+        //     break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_6);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_2);
+            break;
+        // case StatePos::pos_7:
+        //     cube.setState(StatePos::pos_7);
+        //     break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_left_inv(Cube& cube) {
+    cube.xRot += 90;
+    switch(cube.curState) {
+        // case StatePos::pos_0:
+        //     cube.setState(StatePos::pos_0);
+        //     break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_6);
+            break;
+        // case StatePos::pos_3:
+        //     cube.setState(StatePos::pos_3);
+        //     break;
+        // case StatePos::pos_4:
+        //     cube.setState(StatePos::pos_4);
+        //     break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_5);
+            break;
+        // case StatePos::pos_7:
+        //     cube.setState(StatePos::pos_7);
+        //     break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_up(Cube& cube) {
+    cube.zRot -= 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_3);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_2);
+            break;
+        // case StatePos::pos_4:
+        //     cube.setState(StatePos::pos_4);
+        //     break;
+        // case StatePos::pos_5:
+        //     cube.setState(StatePos::pos_5);
+        //     break;
+        // case StatePos::pos_6:
+        //     cube.setState(StatePos::pos_6);
+        //     break;
+        // case StatePos::pos_7:
+        //     cube.setState(StatePos::pos_7);
+        //     break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_up_inv(Cube& cube) {
+    cube.zRot += 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_3);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_0);
+            break;
+        // case StatePos::pos_4:
+        //     cube.setState(StatePos::pos_4);
+        //     break;
+        // case StatePos::pos_5:
+        //     cube.setState(StatePos::pos_5);
+        //     break;
+        // case StatePos::pos_6:
+        //     cube.setState(StatePos::pos_6);
+        //     break;
+        // case StatePos::pos_7:
+        //     cube.setState(StatePos::pos_7);
+        //     break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_bot(Cube& cube) {
+    cube.zRot += 90;
+    switch(cube.curState) {
+        // case StatePos::pos_0:
+        //     cube.setState(StatePos::pos_0);
+        //     break;
+        // case StatePos::pos_1:
+        //     cube.setState(StatePos::pos_1);
+        //     break;
+        // case StatePos::pos_2:
+        //     cube.setState(StatePos::pos_2);
+        //     break;
+        // case StatePos::pos_3:
+        //     cube.setState(StatePos::pos_3);
+        //     break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_6);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_4);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_bot_inv(Cube& cube) {
+    cube.zRot -= 90;
+    switch(cube.curState) {
+        // case StatePos::pos_0:
+        //     cube.setState(StatePos::pos_0);
+        //     break;
+        // case StatePos::pos_1:
+        //     cube.setState(StatePos::pos_1);
+        //     break;
+        // case StatePos::pos_2:
+        //     cube.setState(StatePos::pos_2);
+        //     break;
+        // case StatePos::pos_3:
+        //     cube.setState(StatePos::pos_3);
+        //     break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_4);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_6);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_front(Cube& cube) {
+    cube.yRot -= 90;
+    switch(cube.curState) {
+        // case StatePos::pos_0:
+        //     cube.setState(StatePos::pos_0);
+        //     break;
+        // case StatePos::pos_1:
+        //     cube.setState(StatePos::pos_1);
+        //     break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_6);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_4);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_7);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_3);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_front_inv(Cube& cube) {
+    cube.yRot += 90;
+    switch(cube.curState) {
+        // case StatePos::pos_0:
+        //     cube.setState(StatePos::pos_0);
+        //     break;
+        // case StatePos::pos_1:
+        //     cube.setState(StatePos::pos_1);
+        //     break;
+        case StatePos::pos_2:
+            cube.setState(StatePos::pos_3);
+            break;
+        case StatePos::pos_3:
+            cube.setState(StatePos::pos_7);
+            break;
+        // case StatePos::pos_4:
+        //     cube.setState(StatePos::pos_4);
+        //     break;
+        // case StatePos::pos_5:
+        //     cube.setState(StatePos::pos_5);
+        //     break;
+        case StatePos::pos_6:
+            cube.setState(StatePos::pos_2);
+            break;
+        case StatePos::pos_7:
+            cube.setState(StatePos::pos_6);
+            break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_back(Cube& cube) {
+    cube.yRot -= 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_1);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_5);
+            break;
+        // case StatePos::pos_2:
+        //     cube.setState(StatePos::pos_2);
+        //     break;
+        // case StatePos::pos_3:
+        //     cube.setState(StatePos::pos_3);
+        //     break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_0);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_4);
+            break;
+        // case StatePos::pos_6:
+        //     cube.setState(StatePos::pos_6);
+        //     break;
+        // case StatePos::pos_7:
+        //     cube.setState(StatePos::pos_7);
+        //     break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
+static void rotate_cube_back_inv(Cube& cube) {
+    cube.yRot += 90;
+    switch(cube.curState) {
+        case StatePos::pos_0:
+            cube.setState(StatePos::pos_4);
+            break;
+        case StatePos::pos_1:
+            cube.setState(StatePos::pos_0);
+            break;
+        // case StatePos::pos_2:
+        //     cube.setState(StatePos::pos_2);
+        //     break;
+        // case StatePos::pos_3:
+        //     cube.setState(StatePos::pos_3);
+        //     break;
+        case StatePos::pos_4:
+            cube.setState(StatePos::pos_5);
+            break;
+        case StatePos::pos_5:
+            cube.setState(StatePos::pos_1);
+            break;
+        // case StatePos::pos_6:
+        //     cube.setState(StatePos::pos_6);
+        //     break;
+        // case StatePos::pos_7:
+        //     cube.setState(StatePos::pos_7);
+        //     break;
+        default:
+            throw new std::runtime_error("undefined state");
+    }
+}
+
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    const float cameraSpeed = 0.5f; // adjust accordingly
+    const float cameraSpeed = 0.5f; 
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -95,61 +775,143 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
-    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
-        rotateX += 90.0f; 
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-        rotateX -= 90.0f; 
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+        //rotateX += 90.0f;
+        for(auto& cube : cubeData) rotate_cube_x(cube);
+    }
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+        //rotateX -= 90.0f; 
+        for(auto& cube : cubeData) rotate_cube_z_inv(cube);
+    }
 
-    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
-        rotateY += 90.0f; 
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-        rotateY -= 90.0f; 
+    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) {
+        //rotateY -= 90.0f; 
+        for(auto& cube : cubeData) rotate_cube_y(cube);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+        //rotateY += 90.0f;
+        for(auto& cube : cubeData) rotate_cube_y_inv(cube);
+    }
         
-    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
-        rotateZ += 90.0f; 
-    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-        rotateZ -= 90.0f; 
-}
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
+        //rotateZ += 90.0f;
+        for(auto& cube : cubeData) rotate_cube_z(cube);
+    }
 
-//Hold our vertex information
-// * the location for each of our verticies
-// * the ordering for how we should draw (indexData)
+    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+        //rotateZ -= 90.0f;
+        for(auto& cube : cubeData) rotate_cube_z_inv(cube); 
+    }
 
-class Mesh {
-private:
-    std::vector<float> vertexData;
-    std::vector<uint32_t> indexData;
-public:
-    Mesh() = default;
-    Mesh(const std::vector<std::vector<float>>& vertexData, const std::vector<uint32_t>& indexData) {
-        for(auto row : vertexData) {
-            for(auto e : row) {
-                this->vertexData.push_back(e);        
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_3 || 
+                cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_7) {
+                rotate_cube_right(cube);
             }
         }
-
-        for(auto e : indexData) this->indexData.push_back(e);
     }
 
-    size_t getVertexDataSize() const {
-        return vertexData.size() * sizeof(float);
+    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_3 || 
+                cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_7) {
+                rotate_cube_right_inv(cube);
+            }
+        }
     }
 
-    size_t getIndexDataSize() const {
-        return indexData.size() * sizeof(uint32_t);
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_1 || cube.getState() == StatePos::pos_2 || 
+                cube.getState() == StatePos::pos_5 || cube.getState() == StatePos::pos_6) {
+                rotate_cube_left(cube);
+            }
+        }
     }
 
-    std::vector<float> getVertexData() const {
-        return vertexData;
-    }
-    std::vector<uint32_t> getIndexData() const {
-        return indexData;
+    if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_1 || cube.getState() == StatePos::pos_2 || 
+                cube.getState() == StatePos::pos_5 || cube.getState() == StatePos::pos_6) {
+                rotate_cube_left_inv(cube);
+            }
+        }
     }
 
-    size_t getNumIndicies() {
-        return indexData.size();
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_1 || 
+                cube.getState() == StatePos::pos_2 || cube.getState() == StatePos::pos_3) {
+                rotate_cube_up(cube);
+            }
+        }
     }
-};
+
+    if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_1 || 
+                cube.getState() == StatePos::pos_2 || cube.getState() == StatePos::pos_3) {
+                rotate_cube_up_inv(cube);
+            }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_5 || 
+                cube.getState() == StatePos::pos_6 || cube.getState() == StatePos::pos_7) {
+                rotate_cube_bot(cube);
+            }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_5 || 
+                cube.getState() == StatePos::pos_6 || cube.getState() == StatePos::pos_7) {
+                rotate_cube_bot_inv(cube);
+            }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_2 || cube.getState() == StatePos::pos_3 || 
+                cube.getState() == StatePos::pos_6 || cube.getState() == StatePos::pos_7) {
+                rotate_cube_front(cube);
+            }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_2 || cube.getState() == StatePos::pos_3 || 
+                cube.getState() == StatePos::pos_6 || cube.getState() == StatePos::pos_7) {
+                rotate_cube_front_inv(cube);
+            }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_1 || 
+                cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_5) {
+                rotate_cube_back(cube);
+            }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) {
+        for(auto& cube : cubeData) {
+            if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_1 || 
+                cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_5) {
+                rotate_cube_back_inv(cube);
+            }
+        }
+    }
+}
 
 GLuint registerShader(GLuint shaderType, std::string fileName) {
     GLuint shaderId = glCreateShader(shaderType);
@@ -243,14 +1005,6 @@ GLuint registerMesh(const Mesh& mesh) {
     return vao;
 }
 
-struct Cube {
-    float curRot = 0.0f;
-    glm::vec3 cubePos = glm::vec3(0.0f, 0.0f, 0.0f);
-    int curState = 0;
-    GLuint textureID;
-    Cube(glm::vec3 cubePos, float curRot, int curState, GLuint textureID) : cubePos(cubePos), curRot(curRot), curState(curState), textureID(textureID) {}
-};
-
 void renderCube(Cube cube, glm::vec3 cameraPos, GLuint shaderProgram) {
     // glm::mat4 trans = glm::mat4(1.0f);
     // trans = glm::translate(trans, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -260,7 +1014,7 @@ void renderCube(Cube cube, glm::vec3 cameraPos, GLuint shaderProgram) {
     glm::mat4 view          = glm::mat4(1.0f);
     glm::mat4 projection    = glm::mat4(1.0f);
     
-    projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
     view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
@@ -269,11 +1023,11 @@ void renderCube(Cube cube, glm::vec3 cameraPos, GLuint shaderProgram) {
     view = glm::rotate(view, camRotY, glm::vec3(0.0f, 1.0f, 0.0f));
     view = glm::rotate(view, camRotZ, glm::vec3(0.0f, 0.0f, 1.0f));
 
-    glm::vec3 objPos = cube.cubePos;
+    glm::vec3 objPos = cube.curPos;
 
     model = glm::translate(model, objPos);
 
-    // X-axis rotation
+    // // X-axis rotation
     
     // float x1 = objPos.x;
     // float y1 = objPos.y * cos(glm::radians(rotateX)) - objPos.z * sin(glm::radians(rotateX));
@@ -284,20 +1038,20 @@ void renderCube(Cube cube, glm::vec3 cameraPos, GLuint shaderProgram) {
     // float y2 = y1;
     // float z2 = -x1 * sin(glm::radians(rotateY)) + objPos.z * cos(glm::radians(rotateY));
 
-    // // Z-axis rotation
+    // // // Z-axis rotation
     
     // float x_new = x2 * cos(glm::radians(rotateZ)) - y2 * sin(glm::radians(rotateZ));
     // float y_new = x2 * sin(glm::radians(rotateZ)) + y2 * cos(glm::radians(rotateZ));
     // float z_new = z2;
 
-    // // Update object position
+    // // // Update object position
     // objPos.x = x_new;
     // objPos.y = y_new;
     // objPos.z = z_new;
 
-    model = glm::rotate(model, glm::radians(rotateX), glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
-    model = glm::rotate(model, glm::radians(rotateY), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around Y-axis
-    model = glm::rotate(model, glm::radians(rotateZ), glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z-axis
+    model = glm::rotate(model, glm::radians(cube.xRot), glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X-axis
+    model = glm::rotate(model, glm::radians(cube.yRot), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around Y-axis
+    model = glm::rotate(model, glm::radians(cube.zRot), glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z-axis
     
     //Z ROTATION
     // float r = sqrt(2.0f)/2;
@@ -366,11 +1120,13 @@ GLuint loadTexture(const char* path, GLuint shaderProgram) {
     glGenTextures(1, &textureID);
 
     glBindTexture(GL_TEXTURE_2D, textureID);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    // load and generate texture
     int width, height, nrChannels;
     unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
     if (data)
@@ -390,17 +1146,6 @@ GLuint loadTexture(const char* path, GLuint shaderProgram) {
     return textureID;
 }
 
-enum class StatePos {
-    pos_0,
-    pos_1,
-    pos_2,
-    pos_3,
-    pos_4,
-    pos_5,
-    pos_6,
-    pos_7
-};
-
 int main() {
     std::cout << "Hello OpenGL" << std::endl;
 
@@ -416,8 +1161,8 @@ int main() {
     std::cout << "Loaded OpenGL" << std::endl;
 
     //Create window
-    const unsigned int SCR_WIDTH = 800;
-    const unsigned int SCR_HEIGHT = 600;
+    // const unsigned float SCR_WIDTH = 800;
+    // const unsigned float SCR_HEIGHT = 600;
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Rubics Cube", NULL, NULL);
 
     //Make sure window is not cooked
@@ -536,20 +1281,6 @@ int main() {
         24, 25, 26, 27, 28, 29, // Back face
         30, 31, 32, 33, 34, 35} // Right face
 
-        //Cube 2
-        // 36, 37, 38, 39, 40, 41,
-        // 42, 43, 44, 45, 46, 47, 
-        // 48, 49, 50, 51, 52, 53,
-        // 54, 55, 56, 57, 58, 59, 
-        // 60, 61, 62, 63, 64, 65
-        //66, 67, 68, 69, 70, 71
-
-        // 72, 73, 74, 75, 76, 77
-        // 78, 79, 80, 81, 82, 83 
-        // 84, 85, 86, 87, 88, 89, 
-        // 90, 91, 92, 93, 94, 95,
-        // 96, 97, 98, 99, 100, 101
-        //}
     };
     
     GLuint mesh1 = registerMesh(raw_mesh);
@@ -590,16 +1321,8 @@ int main() {
 
     //TRANSFORM
     // unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform"); //new
-    std::map<StatePos,glm::vec3> posFromState;
-    posFromState[StatePos::pos_0] = glm::vec3(0.5f, 0.5f, 0.5f);
-    posFromState[StatePos::pos_1] = glm::vec3(-0.5f, 0.5f, 0.5f); 
-    posFromState[StatePos::pos_2] = glm::vec3(-0.5f, -0.5f, 0.5f);
-    posFromState[StatePos::pos_3] = glm::vec3(0.5f, -0.5f, 0.5f);
-    posFromState[StatePos::pos_4] = glm::vec3(0.5f, 0.5f, -0.5f);
-    posFromState[StatePos::pos_5] = glm::vec3(-0.5f, 0.5f, -0.5f);
-    posFromState[StatePos::pos_6] = glm::vec3(-0.5f, -0.5f, -0.5f);
-    posFromState[StatePos::pos_7] = glm::vec3(0.5f, -0.5f, -0.5f);
 
+    // Load Texture
     GLuint texture0 = loadTexture("../resource/cube0.jpg", shaderProgram);
     GLuint texture1 = loadTexture("../resource/cube1.jpg", shaderProgram);
     GLuint texture2 = loadTexture("../resource/cube2.jpg", shaderProgram);
@@ -608,6 +1331,15 @@ int main() {
     GLuint texture5 = loadTexture("../resource/cube5.jpg", shaderProgram);
     GLuint texture6 = loadTexture("../resource/cube6.jpg", shaderProgram);
     GLuint texture7 = loadTexture("../resource/cube7.jpg", shaderProgram);
+
+    cubeData.push_back({posFromState[StatePos::pos_0], StatePos::pos_0, texture0});
+    cubeData.push_back({posFromState[StatePos::pos_1], StatePos::pos_1, texture1});
+    cubeData.push_back({posFromState[StatePos::pos_2], StatePos::pos_2, texture2});
+    cubeData.push_back({posFromState[StatePos::pos_3], StatePos::pos_3, texture3});
+    cubeData.push_back({posFromState[StatePos::pos_4], StatePos::pos_4, texture4});
+    cubeData.push_back({posFromState[StatePos::pos_5], StatePos::pos_5, texture5});
+    cubeData.push_back({posFromState[StatePos::pos_6], StatePos::pos_6, texture6});
+    cubeData.push_back({posFromState[StatePos::pos_7], StatePos::pos_7, texture7});
 
     //Main Event Loop
     while(!glfwWindowShouldClose(window)) {
@@ -619,17 +1351,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         selectShaderProgram(shaderProgram);
-        Cube cube0 = Cube(glm::vec3(0.5f, 0.5f, 0.5f),    glm::radians(0.0f),   0, texture0);
-        Cube cube1 = Cube(glm::vec3(-0.5f, 0.5f, 0.5f),   glm::radians(90.0f),  1, texture1);
-        Cube cube2 = Cube(glm::vec3(-0.5f, -0.5f, 0.5f),  glm::radians(180.0f), 2, texture2);
-        Cube cube3 = Cube(glm::vec3(0.5f, -0.5f, 0.5f),   glm::radians(270.0f), 3, texture3);
-        Cube cube4 = Cube(glm::vec3(0.5f, 0.5f, -0.5f),   glm::radians(0.0f),   4, texture4);
-        Cube cube5 = Cube(glm::vec3(-0.5f, 0.5f, -0.5f),  glm::radians(90.0f),  5, texture5);
-        Cube cube6 = Cube(glm::vec3(-0.5f, -0.5f, -0.5f), glm::radians(180.0f), 6, texture6);
-        Cube cube7 = Cube(glm::vec3(0.5f, -0.5f, -0.5f),  glm::radians(270.0f), 7, texture7);
 
-     
-        std::vector<Cube> cubeData = {cube0,cube1,cube2,cube3,cube4,cube5,cube6,cube7};
         for (auto cube : cubeData) {
             renderCube(cube, cameraPos, shaderProgram);
             drawMesh(mesh1, raw_mesh.getNumIndicies());
