@@ -16,6 +16,12 @@ add_subdirectory(packages/glm)
 
 add_executable(rubiks
     src/main.cpp
+    src/cube.cpp
+    src/mesh.cpp
+    src/graphics.cpp
+    src/shader.cpp
+    src/shader_program.cpp
+    src/texture.cpp
 )
 
 target_link_libraries(rubiks PRIVATE glfw)
