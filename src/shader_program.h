@@ -8,6 +8,7 @@ class ShaderProgram {
 private:
     uint id;
 public:
+    ShaderProgram() = default;
     ShaderProgram(vec<Shader> shaders);
     uint getId();
     void selectThisShader();

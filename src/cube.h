@@ -7,6 +7,7 @@
 
 #include "common_alias.h"
 #include "state.h"
+#include "mesh.h"
 
 class Cube {
 public:
@@ -17,6 +18,7 @@ public:
     glm::vec3 curPos = {0.0f, 0.0f, 0.0f};
     StatePos curState;
     uint textureID;
+    Mesh mesh;
     
     Cube(glm::vec3 curPos, StatePos curState, uint textureID);
     void setState(StatePos nextState);
@@ -24,6 +26,7 @@ public:
     void rotateY(float angle);
     void rotateZ(float angle);
     StatePos getState();
+    const Mesh& getMesh();
 };
 
 #endif

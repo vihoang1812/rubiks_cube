@@ -3,6 +3,8 @@
 
 #include <glm/glm.hpp>
 
+class Cube; //To avoid cyclic dependancies
+
 //This probably needs to be moved to a utility folder / class
 
 enum class StatePos {
@@ -21,23 +23,21 @@ private:
     PosFromState() = default;
 
 public:
-    glm::vec3 operator[](StatePos pos) {
-        switch(pos) {
-            case StatePos::pos_0: return glm::vec3( 0.5f,  0.5f,  0.5f);
-            case StatePos::pos_1: return glm::vec3(-0.5f,  0.5f,  0.5f);
-            case StatePos::pos_2: return glm::vec3(-0.5f, -0.5f,  0.5f);
-            case StatePos::pos_3: return glm::vec3( 0.5f, -0.5f,  0.5f);
-            case StatePos::pos_4: return glm::vec3( 0.5f,  0.5f, -0.5f);
-            case StatePos::pos_5: return glm::vec3(-0.5f,  0.5f, -0.5f);
-            case StatePos::pos_6: return glm::vec3(-0.5f, -0.5f, -0.5f);
-            case StatePos::pos_7: return glm::vec3( 0.5f, -0.5f, -0.5f);
-        }
-    }
-
-    static PosFromState& getInstance() {
-        static PosFromState instance;
-        return instance;
-    }
+    glm::vec3 operator[](StatePos pos);
+    static PosFromState& getInstance();
 };
+
+void rotate_cube_right(Cube& cube);
+void rotate_cube_right_inv(Cube& cube);
+void rotate_cube_left(Cube& cube);
+void rotate_cube_left_inv(Cube& cube);
+void rotate_cube_up(Cube& cube);
+void rotate_cube_up_inv(Cube& cube);
+void rotate_cube_bot(Cube& cube);
+void rotate_cube_bot_inv(Cube& cube);
+void rotate_cube_front(Cube& cube);
+void rotate_cube_front_inv(Cube& cube);
+void rotate_cube_back(Cube& cube);
+void rotate_cube_back_inv(Cube& cube);
 
 #endif

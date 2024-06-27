@@ -30,6 +30,10 @@ vec<uint> Mesh::getIndexData() const {
     return indexData;
 }
 
-uint Mesh::getNumIndicies() {
+uint Mesh::getNumIndicies() const{
     return indexData.size();
+}
+
+uint Mesh::getId() const{
+    return id;
 }

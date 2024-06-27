@@ -16,7 +16,8 @@ public:
     uint getIndexDataSize() const;
     vec<float> getVertexData() const;
     vec<uint> getIndexData() const;
-    uint getNumIndicies();
+    uint getNumIndicies() const;
+    uint getId() const;
 };
 
 #endif

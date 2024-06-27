@@ -10,11 +10,11 @@
 
 uint Graphics::registerMesh(uint vertexDataSize, void* vertexData, uint indexDataSize, void* indexData) {
     if(vertexDataSize == 0) {
-        throw new std::runtime_error("vertex size must be greater then zero");
+        throw std::runtime_error("vertex size must be greater then zero");
     }
 
     if(indexDataSize == 0) {
-        throw new std::runtime_error("index size must be greater than zero");
+        throw std::runtime_error("index size must be greater than zero");
     }
 
     GLuint vao, vbo, ebo;
@@ -61,7 +61,7 @@ uint Graphics::registerMesh(uint vertexDataSize, void* vertexData, uint indexDat
 
 uint Graphics::registerTexture(str fileName) {
     if(!shaderProgramLoaded) {
-        throw new std::runtime_error("shader program must be created and selected before loading textures");
+        throw std::runtime_error("shader program must be created and selected before loading textures");
     }
 
     GLuint textureID;
@@ -128,37 +128,34 @@ void Graphics::linkShader(uint shaderProgramId) {
         std::cout << "shader program failed to link" << std::endl;
         glGetProgramInfoLog(shaderProgramId, 512, NULL, infoLog);
         std::cout << infoLog << std::endl;
-        throw new std::runtime_error("shader failed at link step");
+        throw std::runtime_error("shader failed at link step");
     }
 }
 
 void Graphics::selectShaderProgram(uint shaderProgramId) {
+    this->shaderProgramId = shaderProgramId;
     glUseProgram(shaderProgramId);
+    shaderProgramLoaded = true;
 }
 
-//Can simplify function call later
-void Graphics::drawMesh(uint meshId, uint textureId, uint totalIndicies, float* model, float* view, float* projection) {
-    // retrieve the matrix uniform locations
-    unsigned int modelLoc = glGetUniformLocation(shaderProgramId, "model");
-    unsigned int viewLoc  = glGetUniformLocation(shaderProgramId, "view");
-    unsigned int projectionLoc = glGetUniformLocation(shaderProgramId, "projection");
+uint Graphics::getUniformId(str uniformName) {
+    return glGetUniformLocation(shaderProgramId, uniformName.c_str());
+}
 
-    if(model == nullptr) throw new std::runtime_error("model is null");
-    if(view == nullptr) throw new std::runtime_error("view is null");
-    if(projection == nullptr) throw new std::runtime_error("projection is null");
+void Graphics::setUniformMat4fv(uint uniformLocation, float* data) {
+    glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, data);
+}
 
-    // pass them to the shaders (3 different ways)
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, model);
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, view);
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, projection);
+void Graphics::setUniformMat4fv(str uniformName, float* data) {
+    setUniformMat4fv(getUniformId(uniformName), data);
+}
 
+void Graphics::setTexture(uint textureId) {
     glActiveTexture(GL_TEXTURE0); // Activate texture unit
     glBindTexture(GL_TEXTURE_2D, textureId); // Bind the cube's texture
+}
 
-    if(meshId == 0) {
-        throw new std::runtime_error("Drawable id is invalid");
-    }
-
+void Graphics::drawMesh(uint meshId, uint totalIndicies) {
     glBindVertexArray(meshId);
     glDrawElements(GL_TRIANGLES, totalIndicies, GL_UNSIGNED_INT, 0);
 }
