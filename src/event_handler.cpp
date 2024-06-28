@@ -1,5 +1,4 @@
 #include <iostream>
-#include <thread>
 #include "event_handler.h"
 
 EventHandler& EventHandler::getInstance() {
