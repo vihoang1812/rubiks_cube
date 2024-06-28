@@ -55,172 +55,98 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         EventHandler::getInstance().sendEvent(Event::WINDOW_CLOSE);
     }
 
-    // if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
-    //     std::cout << "Enter was Pressed :)" << std::endl; 
-    //     cameraPos += glm::vec3(0.1f, 0.0f, 0.0f);
-    // }
+    if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
+        std::cout << "Enter was Pressed :)" << std::endl; 
+        cameraPos += glm::vec3(0.1f, 0.0f, 0.0f);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-    //     //std::cout << "Down was Pressed :)" << std::endl; 
-    //     camRotX += 0.1;
-    // }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_ROTATE_DOWN);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-    //     //std::cout << "Up was Pressed :)" << std::endl; 
-    //     camRotX -= 0.1;
-    // }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_ROTATE_UP);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
-    //     //std::cout << "RIGHT_SHIFT was Pressed :)" << std::endl; 
-    //     camRotZ += 0.1f;
-    // }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_ROTATE_RIGHT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-    //     //std::cout << "LEFT_SHIFT was Pressed :)" << std::endl; 
-    //     camRotZ -= 0.1f;
-    // }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_ROTATE_LEFT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-    //     //std::cout << "Left was Pressed :)" << std::endl; 
-    //     camRotY += 0.1f; 
-    // }
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_ROTATE_ROLL_LEFT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-    //     //std::cout << "Right was Pressed :)" << std::endl; 
-    //     camRotY -= 0.1f; // Rotate around Y-axis (left and right)
-    // }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_ROTATE_ROLL_RIGHT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    //     cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_MOVE_FORWARDS);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    //     cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_MOVE_BACKWARDS);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    //     cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_MOVE_LEFT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    //     cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::CAMERA_MOVE_RIGHT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_3 || 
-    //             cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_7) {
-    //             rotate_cube_right(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_RIGHT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_3 || 
-    //             cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_7) {
-    //             rotate_cube_right_inv(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_RIGHT_INV);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_1 || cube.getState() == StatePos::pos_2 || 
-    //             cube.getState() == StatePos::pos_5 || cube.getState() == StatePos::pos_6) {
-    //             rotate_cube_left(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_LEFT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_1 || cube.getState() == StatePos::pos_2 || 
-    //             cube.getState() == StatePos::pos_5 || cube.getState() == StatePos::pos_6) {
-    //             rotate_cube_left_inv(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_LEFT_INV);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_1 || 
-    //             cube.getState() == StatePos::pos_2 || cube.getState() == StatePos::pos_3) {
-    //             rotate_cube_up(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_UP);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_1 || 
-    //             cube.getState() == StatePos::pos_2 || cube.getState() == StatePos::pos_3) {
-    //             rotate_cube_up_inv(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_UP_INV);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_5 || 
-    //             cube.getState() == StatePos::pos_6 || cube.getState() == StatePos::pos_7) {
-    //             rotate_cube_bot(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_BOTTOM);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_5 || 
-    //             cube.getState() == StatePos::pos_6 || cube.getState() == StatePos::pos_7) {
-    //             rotate_cube_bot_inv(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_BOTTOM_INV);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_2 || cube.getState() == StatePos::pos_3 || 
-    //             cube.getState() == StatePos::pos_6 || cube.getState() == StatePos::pos_7) {
-    //             rotate_cube_front(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_FRONT);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_2 || cube.getState() == StatePos::pos_3 || 
-    //             cube.getState() == StatePos::pos_6 || cube.getState() == StatePos::pos_7) {
-    //             rotate_cube_front_inv(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_FRONT_INV);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_1 || 
-    //             cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_5) {
-    //             rotate_cube_back(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_BACK);
+    }
 
-    // if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) {
-    //     for(auto& cube : cubeData) {
-    //         if (cube.getState() == StatePos::pos_0 || cube.getState() == StatePos::pos_1 || 
-    //             cube.getState() == StatePos::pos_4 || cube.getState() == StatePos::pos_5) {
-    //             rotate_cube_back_inv(cube);
-    //         }
-    //     }
-    //     printCubes();
-    // }
+    if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) {
+        EventHandler::getInstance().sendEvent(Event::RUBIK_ROTATE_BACK_INV);
+    }
 }
 
 int main() {
