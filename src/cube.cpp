@@ -1,6 +1,6 @@
 #include "cube.h"
 
-Cube::Cube(glm::vec3 curPos, StatePos curState, uint textureID) : curPos(curPos), curState(curState), textureID(textureID) {
+Cube::Cube(glm::vec3 curPos, StatePos curState, uint textureID) : curPos(curPos), curState(curState), initState(curState), textureID(textureID) {
     mesh = {
         {
         //top, yellow
@@ -89,4 +89,9 @@ StatePos Cube::getState() {
 
 const Mesh& Cube::getMesh() {
     return mesh;
+}
+
+void Cube::reset() {
+    setState(initState);
+    rot = glm::angleAxis(glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 }

@@ -20,29 +20,16 @@ PosFromState& PosFromState::getInstance() {
 }
 
 void rotate_cube_right(Cube& cube) {
-    //cube.xRot -= 90;
     cube.rotateX(-90.0f);
     switch(cube.curState) {
         case StatePos::pos_0:
             cube.setState(StatePos::pos_4);
             break;
-        // case StatePos::pos_1:
-        //     cube.setState(StatePos::pos_1);
-        //     break;
-        // case StatePos::pos_2:
-        //     cube.setState(StatePos::pos_2);
-        //     break;
         case StatePos::pos_3:
             cube.setState(StatePos::pos_0);
             break;
         case StatePos::pos_4:
             cube.setState(StatePos::pos_7);
-            break;
-        // case StatePos::pos_5:
-        //     cube.setState(StatePos::pos_5);
-        //     break;
-        // case StatePos::pos_6:
-        //     cube.setState(StatePos::pos_6);
             break;
         case StatePos::pos_7:
             cube.setState(StatePos::pos_3);
@@ -53,30 +40,17 @@ void rotate_cube_right(Cube& cube) {
 }
 
 void rotate_cube_right_inv(Cube& cube) {
-    //cube.xRot += 90;
     cube.rotateX(90.0f);
     switch(cube.curState) {
         case StatePos::pos_0:
             cube.setState(StatePos::pos_3);
             break;
-        // case StatePos::pos_1:
-        //     cube.setState(StatePos::pos_1);
-        //     break;
-        // case StatePos::pos_2:
-        //     cube.setState(StatePos::pos_2);
-        //     break;
         case StatePos::pos_3:
             cube.setState(StatePos::pos_7);
             break;
         case StatePos::pos_4:
             cube.setState(StatePos::pos_0);
             break;
-        // case StatePos::pos_5:
-        //     cube.setState(StatePos::pos_5);
-        //     break;
-        // case StatePos::pos_6:
-        //     cube.setState(StatePos::pos_6);
-        //     break;
         case StatePos::pos_7:
             cube.setState(StatePos::pos_4);
             break;
@@ -86,73 +60,46 @@ void rotate_cube_right_inv(Cube& cube) {
 }
 
 void rotate_cube_left(Cube& cube) {
-    //cube.xRot -= 90;
     cube.rotateX(-90.0f);
     switch(cube.curState) {
-        // case StatePos::pos_0:
-        //     cube.setState(StatePos::pos_0);
-        //     break;
         case StatePos::pos_1:
             cube.setState(StatePos::pos_5);
             break;
         case StatePos::pos_2:
             cube.setState(StatePos::pos_1);
             break;
-        // case StatePos::pos_3:
-        //     cube.setState(StatePos::pos_3);
-        //     break;
-        // case StatePos::pos_4:
-        //     cube.setState(StatePos::pos_4);
-        //     break;
         case StatePos::pos_5:
             cube.setState(StatePos::pos_6);
             break;
         case StatePos::pos_6:
             cube.setState(StatePos::pos_2);
             break;
-        // case StatePos::pos_7:
-        //     cube.setState(StatePos::pos_7);
-        //     break;
         default:
             throw std::runtime_error("undefined state");
     }
 }
 
 void rotate_cube_left_inv(Cube& cube) {
-    //cube.xRot += 90;
     cube.rotateX(90.0f);
     switch(cube.curState) {
-        // case StatePos::pos_0:
-        //     cube.setState(StatePos::pos_0);
-        //     break;
         case StatePos::pos_1:
             cube.setState(StatePos::pos_2);
             break;
         case StatePos::pos_2:
             cube.setState(StatePos::pos_6);
             break;
-        // case StatePos::pos_3:
-        //     cube.setState(StatePos::pos_3);
-        //     break;
-        // case StatePos::pos_4:
-        //     cube.setState(StatePos::pos_4);
-        //     break;
         case StatePos::pos_5:
             cube.setState(StatePos::pos_1);
             break;
         case StatePos::pos_6:
             cube.setState(StatePos::pos_5);
             break;
-        // case StatePos::pos_7:
-        //     cube.setState(StatePos::pos_7);
-        //     break;
         default:
             throw std::runtime_error("undefined state");
     }
 }
 
 void rotate_cube_up(Cube& cube) {
-    //cube.zRot -= 90;
     cube.rotateZ(-90.0f);
     switch(cube.curState) {
         case StatePos::pos_0:
@@ -167,25 +114,12 @@ void rotate_cube_up(Cube& cube) {
         case StatePos::pos_3:
             cube.setState(StatePos::pos_2);
             break;
-        // case StatePos::pos_4:
-        //     cube.setState(StatePos::pos_4);
-        //     break;
-        // case StatePos::pos_5:
-        //     cube.setState(StatePos::pos_5);
-        //     break;
-        // case StatePos::pos_6:
-        //     cube.setState(StatePos::pos_6);
-        //     break;
-        // case StatePos::pos_7:
-        //     cube.setState(StatePos::pos_7);
-        //     break;
         default:
             throw std::runtime_error("undefined state");
     }
 }
 
 void rotate_cube_up_inv(Cube& cube) {
-    //cube.zRot += 90;
     cube.rotateZ(90.0f);
     switch(cube.curState) {
         case StatePos::pos_0:
@@ -200,39 +134,14 @@ void rotate_cube_up_inv(Cube& cube) {
         case StatePos::pos_3:
             cube.setState(StatePos::pos_0);
             break;
-        // case StatePos::pos_4:
-        //     cube.setState(StatePos::pos_4);
-        //     break;
-        // case StatePos::pos_5:
-        //     cube.setState(StatePos::pos_5);
-        //     break;
-        // case StatePos::pos_6:
-        //     cube.setState(StatePos::pos_6);
-        //     break;
-        // case StatePos::pos_7:
-        //     cube.setState(StatePos::pos_7);
-        //     break;
         default:
             throw std::runtime_error("undefined state");
     }
 }
 
 void rotate_cube_bot(Cube& cube) {
-    //cube.zRot -= 90;
     cube.rotateZ(-90.0f);
     switch(cube.curState) {
-        // case StatePos::pos_0:
-        //     cube.setState(StatePos::pos_0);
-        //     break;
-        // case StatePos::pos_1:
-        //     cube.setState(StatePos::pos_1);
-        //     break;
-        // case StatePos::pos_2:
-        //     cube.setState(StatePos::pos_2);
-        //     break;
-        // case StatePos::pos_3:
-        //     cube.setState(StatePos::pos_3);
-        //     break;
         case StatePos::pos_4:
             cube.setState(StatePos::pos_7);
             break;
@@ -251,21 +160,8 @@ void rotate_cube_bot(Cube& cube) {
 }
 
 void rotate_cube_bot_inv(Cube& cube) {
-    //cube.zRot += 90;
     cube.rotateZ(90.0f);
     switch(cube.curState) {
-        // case StatePos::pos_0:
-        //     cube.setState(StatePos::pos_0);
-        //     break;
-        // case StatePos::pos_1:
-        //     cube.setState(StatePos::pos_1);
-        //     break;
-        // case StatePos::pos_2:
-        //     cube.setState(StatePos::pos_2);
-        //     break;
-        // case StatePos::pos_3:
-        //     cube.setState(StatePos::pos_3);
-        //     break;
         case StatePos::pos_4:
             cube.setState(StatePos::pos_5);
             break;
@@ -284,27 +180,14 @@ void rotate_cube_bot_inv(Cube& cube) {
 }
 
 void rotate_cube_front(Cube& cube) {
-    //cube.yRot -= 90;
     cube.rotateY(-90.0f);
     switch(cube.curState) {
-        // case StatePos::pos_0:
-        //     cube.setState(StatePos::pos_0);
-        //     break;
-        // case StatePos::pos_1:
-        //     cube.setState(StatePos::pos_1);
-        //     break;
         case StatePos::pos_2:
             cube.setState(StatePos::pos_6);
             break;
         case StatePos::pos_3:
             cube.setState(StatePos::pos_2);
             break;
-        // case StatePos::pos_4:
-        //     cube.setState(StatePos::pos_4);
-        //     break;
-        // case StatePos::pos_5:
-        //     cube.setState(StatePos::pos_5);
-        //     break;
         case StatePos::pos_6:
             cube.setState(StatePos::pos_7);
             break;
@@ -317,27 +200,14 @@ void rotate_cube_front(Cube& cube) {
 }
 
 void rotate_cube_front_inv(Cube& cube) {
-    //cube.yRot += 90;
     cube.rotateY(90.0f);
     switch(cube.curState) {
-        // case StatePos::pos_0:
-        //     cube.setState(StatePos::pos_0);
-        //     break;
-        // case StatePos::pos_1:
-        //     cube.setState(StatePos::pos_1);
-        //     break;
         case StatePos::pos_2:
             cube.setState(StatePos::pos_3);
             break;
         case StatePos::pos_3:
             cube.setState(StatePos::pos_7);
             break;
-        // case StatePos::pos_4:
-        //     cube.setState(StatePos::pos_4);
-        //     break;
-        // case StatePos::pos_5:
-        //     cube.setState(StatePos::pos_5);
-        //     break;
         case StatePos::pos_6:
             cube.setState(StatePos::pos_2);
             break;
@@ -350,7 +220,6 @@ void rotate_cube_front_inv(Cube& cube) {
 }
 
 void rotate_cube_back(Cube& cube) {
-    //cube.yRot -= 90;
     cube.rotateY(-90.0f);
     switch(cube.curState) {
         case StatePos::pos_0:
@@ -359,31 +228,18 @@ void rotate_cube_back(Cube& cube) {
         case StatePos::pos_1:
             cube.setState(StatePos::pos_5);
             break;
-        // case StatePos::pos_2:
-        //     cube.setState(StatePos::pos_2);
-        //     break;
-        // case StatePos::pos_3:
-        //     cube.setState(StatePos::pos_3);
-        //     break;
         case StatePos::pos_4:
             cube.setState(StatePos::pos_0);
             break;
         case StatePos::pos_5:
             cube.setState(StatePos::pos_4);
             break;
-        // case StatePos::pos_6:
-        //     cube.setState(StatePos::pos_6);
-        //     break;
-        // case StatePos::pos_7:
-        //     cube.setState(StatePos::pos_7);
-        //     break;
         default:
             throw std::runtime_error("undefined state");
     }
 }
 
 void rotate_cube_back_inv(Cube& cube) {
-    //cube.yRot += 90;
     cube.rotateY(90.0f);
     switch(cube.curState) {
         case StatePos::pos_0:
@@ -392,24 +248,12 @@ void rotate_cube_back_inv(Cube& cube) {
         case StatePos::pos_1:
             cube.setState(StatePos::pos_0);
             break;
-        // case StatePos::pos_2:
-        //     cube.setState(StatePos::pos_2);
-        //     break;
-        // case StatePos::pos_3:
-        //     cube.setState(StatePos::pos_3);
-        //     break;
         case StatePos::pos_4:
             cube.setState(StatePos::pos_5);
             break;
         case StatePos::pos_5:
             cube.setState(StatePos::pos_1);
             break;
-        // case StatePos::pos_6:
-        //     cube.setState(StatePos::pos_6);
-        //     break;
-        // case StatePos::pos_7:
-        //     cube.setState(StatePos::pos_7);
-        //     break;
         default:
             throw std::runtime_error("undefined state");
     }

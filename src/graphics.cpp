@@ -5,6 +5,7 @@
 #include <glad/glad.h>
 
 #include "graphics.h"
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "constants.h"
 

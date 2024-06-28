@@ -16,6 +16,7 @@ public:
     float zRot = 0;
     glm::quat rot = glm::angleAxis(glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     glm::vec3 curPos = {0.0f, 0.0f, 0.0f};
+    StatePos initState;
     StatePos curState;
     uint textureID;
     Mesh mesh;
@@ -27,6 +28,7 @@ public:
     void rotateZ(float angle);
     StatePos getState();
     const Mesh& getMesh();
+    void reset();
 };
 
 #endif

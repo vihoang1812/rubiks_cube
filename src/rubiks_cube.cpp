@@ -30,24 +30,23 @@ RubiksCube::RubiksCube() {
 
 void RubiksCube::draw() {
     for(auto cube : cubeData) {
-        renderCube(cube, cameraPos);
+        renderCube(cube);
         g.drawMesh(cube.getMesh().getId(), cube.getMesh().getNumIndicies());
     }
 }
 
-void RubiksCube::renderCube(Cube& cube, glm::vec3 cameraPos) {
+void RubiksCube::renderCube(Cube& cube) {
     glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     glm::mat4 view          = glm::mat4(1.0f);
     glm::mat4 projection    = glm::mat4(1.0f);
     
     projection = glm::perspective(glm::radians(45.0f), (float) Constants::SCR_WIDTH / (float) Constants::SCR_HEIGHT, 0.1f, 100.0f);
 
-    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    view = glm::lookAt(camera.getPosition(), camera.getPosition() + camera.getFront(), camera.getUp());
 
-    //view  = glm::translate(view, cameraPos);
-    view = glm::rotate(view, camRotX, glm::vec3(1.0f, 0.0f, 0.0f));
-    view = glm::rotate(view, camRotY, glm::vec3(0.0f, 1.0f, 0.0f));
-    view = glm::rotate(view, camRotZ, glm::vec3(0.0f, 0.0f, 1.0f));
+    view = glm::rotate(view, camera.rotX(), glm::vec3(1.0f, 0.0f, 0.0f));
+    view = glm::rotate(view, camera.rotY(), glm::vec3(0.0f, 1.0f, 0.0f));
+    view = glm::rotate(view, camera.rotZ(), glm::vec3(0.0f, 0.0f, 1.0f));
 
     glm::vec3 objPos = cube.curPos;
 
@@ -63,50 +62,11 @@ void RubiksCube::renderCube(Cube& cube, glm::vec3 cameraPos) {
 }
 
 void RubiksCube::onEvent(Event e) {
-    if (e == Event::CAMERA_ROTATE_DOWN) {
-        //std::cout << "Down was Pressed :)" << std::endl; 
-        camRotX += 0.1;
-    }
-
-    if (e == Event::CAMERA_ROTATE_UP) {
-        //std::cout << "Up was Pressed :)" << std::endl; 
-        camRotX -= 0.1;
-    }
-
-    if (e == Event::CAMERA_ROTATE_RIGHT) {
-        //std::cout << "RIGHT_SHIFT was Pressed :)" << std::endl; 
-        camRotZ += 0.1f;
-    }
-
-    if (e == Event::CAMERA_ROTATE_LEFT) {
-        //std::cout << "LEFT_SHIFT was Pressed :)" << std::endl; 
-        camRotZ -= 0.1f;
-    }
-
-    if (e == Event::CAMERA_ROTATE_ROLL_LEFT) {
-        //std::cout << "Left was Pressed :)" << std::endl; 
-        camRotY += 0.1f; 
-    }
-
-    if (e == Event::CAMERA_ROTATE_ROLL_RIGHT) {
-        //std::cout << "Right was Pressed :)" << std::endl; 
-        camRotY -= 0.1f; // Rotate around Y-axis (left and right)
-    }
-
-    if (e == Event::CAMERA_MOVE_FORWARDS) {
-        cameraPos += cameraSpeed * cameraFront;
-    }
-
-    if (e == Event::CAMERA_MOVE_BACKWARDS) {
-        cameraPos -= cameraSpeed * cameraFront;
-    }
-
-    if (e == Event::CAMERA_MOVE_LEFT) {
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    }
-
-    if (e == Event::CAMERA_MOVE_RIGHT) {
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    
+    if (e == Event::RUBIK_RESET) {
+        for(auto& cube : cubeData) {
+            cube.reset();
+        }
     }
 
     if (e == Event::RUBIK_ROTATE_RIGHT) {

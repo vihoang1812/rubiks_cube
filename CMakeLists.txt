@@ -22,11 +22,12 @@ add_executable(rubiks
     src/shader.cpp
     src/shader_program.cpp
     src/texture.cpp
-    src/rotation.cpp
     src/window.cpp
     src/state.cpp
     src/event_handler.cpp
     src/rubiks_cube.cpp
+    src/camera.cpp
+    src/keyboard.cpp
 )
 
 target_link_libraries(rubiks PRIVATE glfw)

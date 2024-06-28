@@ -60,10 +60,11 @@ void Window::update() {
 
 void Window::run() {
     while(isOpen()) {
+        EventHandler::getInstance().checkEvents();
+        
         clear();
 
         shaderProgram.selectThisShader();
-
         rubiksCube->draw();
 
         update();
@@ -78,10 +79,7 @@ void Window::clear() {
 }
 
 void Window::onEvent(Event e) {
-    switch(e) {
-        case Event::WINDOW_CLOSE:
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
-            EventHandler::getInstance().sendEvent(Event::PROGRAM_EXIT);
-            break;
+    if(e == Event::WINDOW_CLOSE) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
 }
